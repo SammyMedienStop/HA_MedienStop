@@ -84,3 +84,10 @@ wählen (Feld im Setup/Konfigurieren). Details siehe
 [hacs-badge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg
 [version-badge]: https://img.shields.io/badge/version-2.0.0-blue.svg
 [license-badge]: https://img.shields.io/badge/license-MIT-green.svg
+
+
+## Für Entwickler / KIs (LLMs)
+Wiedereinstieg ins Projekt: zuerst [`AGENTS.md`](AGENTS.md) lesen, dann
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (Aufbau/Logik),
+[`docs/PATCHLOG.md`](docs/PATCHLOG.md) (Fixes + Ursachen) und
+[`docs/REFERENCE.md`](docs/REFERENCE.md) (Services/Entities/Config).
