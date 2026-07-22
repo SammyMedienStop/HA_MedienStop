@@ -1,8 +1,8 @@
 <div align="center">
 
-# 📺 MedienStop.de – Bildschirmzeit-Steuerung für Home Assistant
+# 📺 MedienStop.de – Fernsehzeit-Steuerung für Home Assistant
 
-**Faire Fernsehzeit für Kinder – automatisch, kindgerecht und elternfreundlich.**
+**Ein Zusatzprojekt von [MedienStop.de](https://medienstop.de) – der Kindersicherung, die Eltern wirklich verstehen.**
 
 [![Home Assistant][ha-badge]][ha] [![HACS][hacs-badge]][hacs] [![Release][release-badge]][releases] [![License: MIT][mit-badge]][mit] [![Website][web-badge]][website]
 
@@ -12,16 +12,24 @@
 
 ---
 
-## Was ist MedienStop.de?
+## Über MedienStop.de
 
-**MedienStop.de** ist eine Home-Assistant-Integration, die die **Fernsehzeit von
-Kindern** verwaltet: pro Kind ein Tagesbudget und erlaubte Zeitfenster, ein
-automatischer Timer, und – wenn die Zeit vorbei ist – schaltet der Fernseher
-sich von selbst aus. Optional wird vorher ein kurzes **Abschieds-Video**
-eingeblendet („Deine Zeit ist um" / „Schlaf gut" / „Jetzt ist keine Fernsehzeit").
+**[MedienStop.de](https://medienstop.de)** hilft Eltern, das **digitale Zuhause
+ihrer Kinder Schritt für Schritt sicher zu machen** – verständlich erklärt, ohne
+Technik-Kauderwelsch, „wie bei einem Kaffee im Wohnzimmer". Dazu gehören über 20
+kostenlose **Schritt-für-Schritt-Anleitungen** (FRITZ!Box & WLAN, Handy & Tablet,
+Konsolen, Computer, Fernseher & Streaming, Apps & Spiele), das geführte
+Eltern-Dashboard **Eltern-SOC** und das Workbook **Familien-Fahrplan**.
 
-Mehr rund um Medienerziehung, Jugendschutz und Familien-Technik findest du auf
-**👉 [MedienStop.de](https://medienstop.de)**.
+## Was ist dieses Projekt?
+
+Diese **Home-Assistant-Integration** ist ein **Zusatzprojekt** von MedienStop.de –
+für Familien, die zuhause **Home Assistant** nutzen und die **Fernsehzeit ihrer
+Kinder automatisieren** möchten. Sie verwaltet pro Kind ein Tagesbudget und
+erlaubte Zeitfenster, zählt die Zeit herunter und schaltet den Fernseher
+automatisch aus, wenn die Zeit vorbei ist – optional mit einem kurzen
+**Abschieds-Video** („Deine Zeit ist um" / „Schlaf gut" / „Jetzt ist keine
+Fernsehzeit"). Ein kleiner, technischer Baustein der großen MedienStop-Idee.
 
 ## ✨ Funktionen
 
