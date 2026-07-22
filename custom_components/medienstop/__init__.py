@@ -166,7 +166,10 @@ class MedienStopManager:
         self._unsub_enforce = None
         self._unsub_tvstate = None
         self.last_reset = dt_util.now().date()
-        self.apply_budgets_now()
+        # WICHTIG: apply_budgets_now() NICHT hier aufrufen - zu diesem Zeitpunkt sind
+        # die gespeicherten Budgets/Restzeiten noch nicht wiederhergestellt. Das
+        # Anwenden passiert in async_setup_entry NACH dem Restore (nur fuer Kinder
+        # ohne wiederhergestellte Restzeit).
 
     # ========================================================================
     # ABLEITUNGEN / HELFER
@@ -736,6 +739,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     manager = MedienStopManager(hass, entry)
     hass.data[DOMAIN][entry.entry_id] = manager
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # Nach dem Wiederherstellen (Budgets/Restzeit sind jetzt geladen): fuer Kinder
+    # OHNE wiederhergestellte Restzeit (Neuinstallation) das Budget anwenden.
+    # Bestehende Restzeiten bleiben ueber Neustarts erhalten.
+    for cid, child in manager.children.items():
+        if not child.get("_remaining_restored"):
+            child["remaining"] = manager.child_budget(cid)
+            child["state"] = STATE_IDLE
+    manager._notify()
     manager.start_clock()
     _async_register_services(hass)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))

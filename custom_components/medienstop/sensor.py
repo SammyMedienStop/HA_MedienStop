@@ -43,7 +43,9 @@ class _ChildBase(MedienStopEntity):
         )
 
 
-class RemainingSensor(_ChildBase, SensorEntity):
+class RemainingSensor(_ChildBase, RestoreSensor):
+    """Verbleibende Minuten - ueberlebt einen Neustart (sonst Reset auf Standard)."""
+
     _attr_name = "Restzeit"
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -56,6 +58,17 @@ class RemainingSensor(_ChildBase, SensorEntity):
     @property
     def native_value(self) -> int:
         return self.manager.children[self._cid]["remaining"]
+
+    async def async_added_to_hass(self) -> None:
+        await RestoreSensor.async_added_to_hass(self)
+        last = await self.async_get_last_sensor_data()
+        if last is not None and last.native_value is not None:
+            try:
+                self.manager.children[self._cid]["remaining"] = int(last.native_value)
+                self.manager.children[self._cid]["_remaining_restored"] = True
+            except (ValueError, TypeError):
+                pass
+        self._subscribe_updates()
 
 
 class WatchedSensor(_ChildBase, RestoreSensor):
