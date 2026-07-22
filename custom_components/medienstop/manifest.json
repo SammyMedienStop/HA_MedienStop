@@ -1,7 +1,7 @@
 {
   "domain": "medienstop",
   "name": "MedienStop.de",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "documentation": "https://github.com/familiekairies-cmd/ha-medienstop",
   "issue_tracker": "https://github.com/familiekairies-cmd/ha-medienstop/issues",
   "dependencies": [],
