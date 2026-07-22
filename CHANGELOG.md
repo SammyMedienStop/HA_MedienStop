@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.2
+- **Fix:** Bei Erreichen des Zeitfenster-Endes (z. B. 20 Uhr) wird jetzt korrekt
+  das **„Zeitfenster-Ende / Schlafenszeit"-Video (limit)** gezeigt – vorher hat die
+  15-Sekunden-Prüfung immer das „kein Timer"-Video (notimer) ausgelöst.
+- Grund-Erkennung (timeup / limit / notimer) in Minuten-Loop und 15-Sekunden-Prüfung
+  vereinheitlicht (`_scan`). Kind wird bei Fensterende pausiert, damit spätere
+  TV-Starts korrekt als „notimer" gelten.
+
 ## 2.0.1
 - **Fix:** Restzeit bleibt über einen Neustart erhalten. Bisher wurde beim Start
   die Restzeit auf die Standard-Budgets gesetzt, bevor die gespeicherten Werte

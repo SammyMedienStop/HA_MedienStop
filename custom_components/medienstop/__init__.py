@@ -449,15 +449,14 @@ class MedienStopManager:
             self._set_tv(False)
             self._notify()
             return
-        any_auth = self.parent_override or any(
-            c["state"] == STATE_RUNNING and c["remaining"] > 0 and self.within_window(cid)
-            for cid, c in self.children.items()
-        )
-        if self._tv_is_on() and not any_auth:
+        daytype = self.current_daytype()
+        authorized, reason = self._scan(daytype, decrement=False)
+        if self._tv_is_on() and not authorized:
             if not self._off_pending:
-                self._goodbye_then_off("notimer")
+                self._goodbye_then_off(reason or "notimer")
         else:
             self._cancel_off()
+        self._sync_webhooks()
         self._notify()
 
     @callback
@@ -472,27 +471,9 @@ class MedienStopManager:
             return
 
         daytype = self.current_daytype()
-        any_authorized = self.parent_override
-        reason = None
+        authorized, reason = self._scan(daytype, decrement=True)
 
-        for cid, child in self.children.items():
-            if child["state"] != STATE_RUNNING:
-                continue
-            if not self.within_window(cid, daytype):
-                reason = reason or "limit"   # Zeitfenster vorbei (z.B. 20/22 Uhr)
-                continue
-            child["remaining"] = max(0, child["remaining"] - 1)
-            child["watched"] += 1          # eine Minute tatsächlich geschaut
-            child["watched_week"] += 1
-            child["watched_month"] += 1
-            child["watched_year"] += 1
-            if child["remaining"] <= 0:
-                child["state"] = STATE_IDLE
-                reason = reason or "timeup"  # Zeit/Budget aufgebraucht
-            else:
-                any_authorized = True
-
-        if self._tv_is_on() and not any_authorized:
+        if self._tv_is_on() and not authorized:
             self._goodbye_then_off(reason or "notimer")
         else:
             self._cancel_off()
@@ -586,6 +567,37 @@ class MedienStopManager:
             self._unsub_off()
             self._unsub_off = None
         self._off_pending = False
+
+    def _scan(self, daytype: str, decrement: bool):
+        """Prueft alle laufenden Timer und liefert (berechtigt, grund).
+
+        grund kann sein: "limit" (Fenster vorbei = Schlafenszeit), "timeup"
+        (Budget aufgebraucht) oder None. decrement=True zaehlt die Restzeit
+        herunter (nur im Minuten-Loop). Ein laufendes Kind, dessen Fenster vorbei
+        ist, wird pausiert (damit danach nicht immer wieder "limit" kommt und
+        spaetere TV-Starts korrekt als "notimer" gelten).
+        """
+        authorized = self.parent_override
+        reason = None
+        for cid, child in self.children.items():
+            if child["state"] != STATE_RUNNING:
+                continue
+            if not self.within_window(cid, daytype):
+                reason = reason or "limit"        # Schlafenszeit / Tagesende
+                child["state"] = STATE_PAUSED
+                continue
+            if decrement:
+                child["remaining"] = max(0, child["remaining"] - 1)
+                child["watched"] += 1
+                child["watched_week"] += 1
+                child["watched_month"] += 1
+                child["watched_year"] += 1
+            if child["remaining"] <= 0:
+                child["state"] = STATE_IDLE
+                reason = reason or "timeup"       # Budget aufgebraucht
+            else:
+                authorized = True
+        return authorized, reason
 
     def _enforce_tv(self, any_authorized: bool | None = None) -> None:
         if not self.system_active:
