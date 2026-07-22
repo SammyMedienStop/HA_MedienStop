@@ -1,0 +1,15 @@
+# BLAUPAUSE: Einstellungs-Karte fuer EIN Profil (Eltern-Dashboard).
+# Kopieren je Profil und 'profil_1' -> 'profil_2' ... ersetzen.
+
+type: entities
+title: Profil 1
+entities:
+- entity: number.profil_1_budget_werktag
+- entity: number.profil_1_budget_wochenende
+- entity: number.profil_1_budget_ferien
+- entity: time.profil_1_werktag_start
+- entity: time.profil_1_werktag_ende
+- entity: time.profil_1_wochenende_start
+- entity: time.profil_1_wochenende_ende
+- entity: time.profil_1_ferien_start
+- entity: time.profil_1_ferien_ende

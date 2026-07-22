@@ -1,0 +1,133 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MedienStop.de – Step 1/2",
+        "description": "How many children and how many time profiles should be created?",
+        "data": {
+          "num_children": "Number of children (1-9)",
+          "num_profiles": "Number of time profiles (1-5)",
+          "tv_entity": "TV entity (optional)",
+          "video_player": "Video player for streaming (Cast/Chromecast, optional)"
+        }
+      },
+      "dashboard": {
+        "title": "MedienStop.de – Step 2/2",
+        "description": "Which kids dashboard variant would you like? (The parent dashboard always exists.)",
+        "data": {
+          "kid_dashboard": "Kids dashboard"
+        }
+      },
+      "names": {
+        "title": "MedienStop.de – Names",
+        "description": "Set names for children and profiles (editable later).",
+        "data": {
+          "name_kind_1": "Name child 1",
+          "name_kind_2": "Name child 2",
+          "name_kind_3": "Name child 3",
+          "name_kind_4": "Name child 4",
+          "name_kind_5": "Name child 5",
+          "name_kind_6": "Name child 6",
+          "name_kind_7": "Name child 7",
+          "name_kind_8": "Name child 8",
+          "name_kind_9": "Name child 9",
+          "name_profil_1": "Name profile 1",
+          "name_profil_2": "Name profile 2",
+          "name_profil_3": "Name profile 3",
+          "name_profil_4": "Name profile 4",
+          "name_profil_5": "Name profile 5"
+        }
+      },
+      "visibility": {
+        "title": "MedienStop.de – Visibility",
+        "description": "Pick the PARENTS first (they see the parent/settings tabs). Optionally assign a user per child (sees only their tab). Empty = visible to all. Persists across updates.",
+        "data": {
+          "user_kind_1": "User for child 1",
+          "user_kind_2": "User for child 2",
+          "user_kind_3": "User for child 3",
+          "user_kind_4": "User for child 4",
+          "user_kind_5": "User for child 5",
+          "user_kind_6": "User for child 6",
+          "user_kind_7": "User for child 7",
+          "user_kind_8": "User for child 8",
+          "user_kind_9": "User for child 9",
+          "admin_users": "Parents (see parent & settings tabs)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "MedienStop.de – Settings",
+        "description": "Change the number of children/profiles and the dashboard variant. Reloads afterwards.",
+        "data": {
+          "num_children": "Number of children (1-9)",
+          "num_profiles": "Number of time profiles (1-5)",
+          "kid_dashboard": "Kids dashboard",
+          "tv_entity": "TV entity (optional)",
+          "video_player": "Video player for streaming (Cast/Chromecast, optional)"
+        }
+      },
+      "names": {
+        "title": "MedienStop.de – Names",
+        "description": "Set names for children and profiles (editable later).",
+        "data": {
+          "name_kind_1": "Name child 1",
+          "name_kind_2": "Name child 2",
+          "name_kind_3": "Name child 3",
+          "name_kind_4": "Name child 4",
+          "name_kind_5": "Name child 5",
+          "name_kind_6": "Name child 6",
+          "name_kind_7": "Name child 7",
+          "name_kind_8": "Name child 8",
+          "name_kind_9": "Name child 9",
+          "name_profil_1": "Name profile 1",
+          "name_profil_2": "Name profile 2",
+          "name_profil_3": "Name profile 3",
+          "name_profil_4": "Name profile 4",
+          "name_profil_5": "Name profile 5"
+        }
+      },
+      "visibility": {
+        "title": "MedienStop.de – Visibility",
+        "description": "Pick the PARENTS first (they see the parent/settings tabs). Optionally assign a user per child (sees only their tab). Empty = visible to all. Persists across updates.",
+        "data": {
+          "user_kind_1": "User for child 1",
+          "user_kind_2": "User for child 2",
+          "user_kind_3": "User for child 3",
+          "user_kind_4": "User for child 4",
+          "user_kind_5": "User for child 5",
+          "user_kind_6": "User for child 6",
+          "user_kind_7": "User for child 7",
+          "user_kind_8": "User for child 8",
+          "user_kind_9": "User for child 9",
+          "admin_users": "Parents (see parent & settings tabs)"
+        }
+      },
+      "videos": {
+        "title": "MedienStop.de – Videos",
+        "description": "Optional: video/image before turning off – pick in media browser or enter URL. Empty = off immediately.",
+        "data": {
+          "media_timeup": "Video time/budget over (pick)",
+          "url_timeup": "…or URL (time/budget over)",
+          "delay_timeup": "Delay time/budget over (s)",
+          "media_limit": "Video window end (pick)",
+          "url_limit": "…or URL (window end)",
+          "delay_limit": "Delay window end (s)",
+          "media_notimer": "Video no timer (pick)",
+          "url_notimer": "…or URL (no timer)",
+          "delay_notimer": "Delay no timer (s)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "kid_dashboard": {
+      "options": {
+        "shared_pin": "Variant 1 – One dashboard for all (PIN per child)",
+        "per_child": "Variant 2 – One dashboard per child (user sharing)"
+      }
+    }
+  }
+}

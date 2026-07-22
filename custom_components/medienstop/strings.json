@@ -1,0 +1,133 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MedienStop.de – Schritt 1/2",
+        "description": "Wie viele Kinder und Profile? Optional: welche Entität soll als Fernseher geschaltet werden?",
+        "data": {
+          "num_children": "Anzahl der Kinder (1-9)",
+          "num_profiles": "Anzahl der Zeit-Profile (1-5)",
+          "tv_entity": "Fernseher-Entität (optional)",
+          "video_player": "Video-Player zum Streamen (Cast/Chromecast, optional)"
+        }
+      },
+      "dashboard": {
+        "title": "MedienStop.de – Schritt 2/2",
+        "description": "Welche Variante des Kinder-Dashboards möchtest du? (Das Eltern-Dashboard gibt es immer.)",
+        "data": {
+          "kid_dashboard": "Kinder-Dashboard"
+        }
+      },
+      "names": {
+        "title": "MedienStop.de – Namen",
+        "description": "Vergib Namen für Kinder und Profile (später änderbar).",
+        "data": {
+          "name_kind_1": "Name Kind 1",
+          "name_kind_2": "Name Kind 2",
+          "name_kind_3": "Name Kind 3",
+          "name_kind_4": "Name Kind 4",
+          "name_kind_5": "Name Kind 5",
+          "name_kind_6": "Name Kind 6",
+          "name_kind_7": "Name Kind 7",
+          "name_kind_8": "Name Kind 8",
+          "name_kind_9": "Name Kind 9",
+          "name_profil_1": "Name Profil 1",
+          "name_profil_2": "Name Profil 2",
+          "name_profil_3": "Name Profil 3",
+          "name_profil_4": "Name Profil 4",
+          "name_profil_5": "Name Profil 5"
+        }
+      },
+      "visibility": {
+        "title": "MedienStop.de – Sichtbarkeit",
+        "description": "Wähle zuerst die ELTERN (sie sehen die Eltern- und Einstellungs-Tabs). Optional: pro Kind einen Benutzer, der nur dessen Tab sieht. Leer = für alle sichtbar. Bleibt nach Updates erhalten.",
+        "data": {
+          "user_kind_1": "Benutzer für Kind 1",
+          "user_kind_2": "Benutzer für Kind 2",
+          "user_kind_3": "Benutzer für Kind 3",
+          "user_kind_4": "Benutzer für Kind 4",
+          "user_kind_5": "Benutzer für Kind 5",
+          "user_kind_6": "Benutzer für Kind 6",
+          "user_kind_7": "Benutzer für Kind 7",
+          "user_kind_8": "Benutzer für Kind 8",
+          "user_kind_9": "Benutzer für Kind 9",
+          "admin_users": "Eltern (sehen Eltern- & Einstellungs-Tabs)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "MedienStop.de – Einstellungen",
+        "description": "Anzahl Kinder/Profile und Dashboard-Variante ändern. Danach wird neu geladen.",
+        "data": {
+          "num_children": "Anzahl der Kinder (1-9)",
+          "num_profiles": "Anzahl der Zeit-Profile (1-5)",
+          "kid_dashboard": "Kinder-Dashboard",
+          "tv_entity": "Fernseher-Entität (optional)",
+          "video_player": "Video-Player zum Streamen (Cast/Chromecast, optional)"
+        }
+      },
+      "names": {
+        "title": "MedienStop.de – Namen",
+        "description": "Vergib Namen für Kinder und Profile (später änderbar).",
+        "data": {
+          "name_kind_1": "Name Kind 1",
+          "name_kind_2": "Name Kind 2",
+          "name_kind_3": "Name Kind 3",
+          "name_kind_4": "Name Kind 4",
+          "name_kind_5": "Name Kind 5",
+          "name_kind_6": "Name Kind 6",
+          "name_kind_7": "Name Kind 7",
+          "name_kind_8": "Name Kind 8",
+          "name_kind_9": "Name Kind 9",
+          "name_profil_1": "Name Profil 1",
+          "name_profil_2": "Name Profil 2",
+          "name_profil_3": "Name Profil 3",
+          "name_profil_4": "Name Profil 4",
+          "name_profil_5": "Name Profil 5"
+        }
+      },
+      "visibility": {
+        "title": "MedienStop.de – Sichtbarkeit",
+        "description": "Wähle zuerst die ELTERN (sie sehen die Eltern- und Einstellungs-Tabs). Optional: pro Kind einen Benutzer, der nur dessen Tab sieht. Leer = für alle sichtbar. Bleibt nach Updates erhalten.",
+        "data": {
+          "user_kind_1": "Benutzer für Kind 1",
+          "user_kind_2": "Benutzer für Kind 2",
+          "user_kind_3": "Benutzer für Kind 3",
+          "user_kind_4": "Benutzer für Kind 4",
+          "user_kind_5": "Benutzer für Kind 5",
+          "user_kind_6": "Benutzer für Kind 6",
+          "user_kind_7": "Benutzer für Kind 7",
+          "user_kind_8": "Benutzer für Kind 8",
+          "user_kind_9": "Benutzer für Kind 9",
+          "admin_users": "Eltern (sehen Eltern- & Einstellungs-Tabs)"
+        }
+      },
+      "videos": {
+        "title": "MedienStop.de – Videos",
+        "description": "Optional: Video/Bild vor dem Ausschalten – im Media-Browser auswählen oder URL angeben. Leer = sofort aus.",
+        "data": {
+          "media_timeup": "Video Zeit/Budget abgelaufen (auswählen)",
+          "url_timeup": "…oder URL (Zeit/Budget abgelaufen)",
+          "delay_timeup": "Verzögerung Zeit/Budget abgelaufen (Sek.)",
+          "media_limit": "Video Zeitfenster-Ende (auswählen)",
+          "url_limit": "…oder URL (Zeitfenster-Ende)",
+          "delay_limit": "Verzögerung Zeitfenster-Ende (Sek.)",
+          "media_notimer": "Video kein Timer (auswählen)",
+          "url_notimer": "…oder URL (kein Timer)",
+          "delay_notimer": "Verzögerung kein Timer (Sek.)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "kid_dashboard": {
+      "options": {
+        "shared_pin": "Variante 1 – Ein Dashboard für alle (PIN je Kind)",
+        "per_child": "Variante 2 – Pro Kind ein Dashboard (Benutzerfreigabe)"
+      }
+    }
+  }
+}

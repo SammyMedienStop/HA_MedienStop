@@ -1,0 +1,335 @@
+title: MedienStop.de
+views:
+- title: Eltern
+  path: eltern
+  icon: mdi:account-supervisor
+  cards:
+  - type: vertical-stack
+    cards:
+    - type: entities
+      title: System
+      show_header_toggle: false
+      entities:
+      - entity: binary_sensor.medienstop_fernseher_aktiv
+        name: Fernseher aktiv
+      - entity: switch.medienstop_system_aktiv
+        name: System aktiv
+      - entity: switch.medienstop_ferien_heute
+        name: Ferien heute
+      - entity: switch.medienstop_elternzeit
+        name: Elternzeit
+      - entity: switch.medienstop_essenspause
+        name: Essenspause
+      - entity: switch.medienstop_elternzeit_auto_aus
+        name: Elternzeit Auto-Aus
+      - entity: time.medienstop_elternzeit_auto_aus_zeit
+        name: Auto-Aus Zeit
+    - type: horizontal-stack
+      cards:
+      - type: button
+        name: +15 ALLE
+        icon: mdi:account-multiple-plus
+        tap_action:
+          action: call-service
+          service: medienstop.add_time
+          data:
+            child: alle
+            minutes: 15
+      - type: button
+        name: +30 ALLE
+        icon: mdi:account-multiple-plus
+        tap_action:
+          action: call-service
+          service: medienstop.add_time
+          data:
+            child: alle
+            minutes: 30
+      - type: button
+        name: Budgets anwenden
+        icon: mdi:refresh
+        tap_action:
+          action: call-service
+          service: medienstop.apply_budgets_now
+  - type: horizontal-stack
+    cards:
+    - type: button
+      name: Test Abschied
+      icon: mdi:movie-open-play
+      tap_action:
+        action: call-service
+        service: medienstop.test_video
+        data:
+          which: timeup
+    - type: button
+      name: Test Limit
+      icon: mdi:movie-open-play
+      tap_action:
+        action: call-service
+        service: medienstop.test_video
+        data:
+          which: limit
+    - type: button
+      name: Test Hinweis
+      icon: mdi:movie-open-play
+      tap_action:
+        action: call-service
+        service: medienstop.test_video
+        data:
+          which: notimer
+  - type: entities
+    title: Kind 1
+    entities:
+    - entity: select.kind_1_profil
+    - entity: text.kind_1_pin
+    - entity: sensor.kind_1_restzeit
+    - entity: sensor.kind_1_heute_geschaut
+    - entity: sensor.kind_1_status
+    footer:
+      type: buttons
+      entities:
+      - entity: sensor.kind_1_restzeit
+        name: '+15'
+        icon: mdi:plus
+        tap_action:
+          action: call-service
+          service: medienstop.add_time
+          data:
+            child: kind_1
+            minutes: 15
+      - entity: sensor.kind_1_restzeit
+        name: '+30'
+        icon: mdi:plus
+        tap_action:
+          action: call-service
+          service: medienstop.add_time
+          data:
+            child: kind_1
+            minutes: 30
+      - entity: sensor.kind_1_restzeit
+        name: Stop
+        icon: mdi:stop
+        tap_action:
+          action: call-service
+          service: medienstop.stop_timer
+          data:
+            child: kind_1
+  - type: entities
+    title: Kind 2
+    entities:
+    - entity: select.kind_2_profil
+    - entity: text.kind_2_pin
+    - entity: sensor.kind_2_restzeit
+    - entity: sensor.kind_2_heute_geschaut
+    - entity: sensor.kind_2_status
+    footer:
+      type: buttons
+      entities:
+      - entity: sensor.kind_2_restzeit
+        name: '+15'
+        icon: mdi:plus
+        tap_action:
+          action: call-service
+          service: medienstop.add_time
+          data:
+            child: kind_2
+            minutes: 15
+      - entity: sensor.kind_2_restzeit
+        name: '+30'
+        icon: mdi:plus
+        tap_action:
+          action: call-service
+          service: medienstop.add_time
+          data:
+            child: kind_2
+            minutes: 30
+      - entity: sensor.kind_2_restzeit
+        name: Stop
+        icon: mdi:stop
+        tap_action:
+          action: call-service
+          service: medienstop.stop_timer
+          data:
+            child: kind_2
+- title: Profil 1
+  path: profil_1
+  icon: mdi:timer-cog-outline
+  cards:
+  - type: entities
+    title: Profil 1
+    entities:
+    - entity: number.profil_1_budget_werktag
+    - entity: number.profil_1_budget_wochenende
+    - entity: number.profil_1_budget_ferien
+    - entity: time.profil_1_werktag_start
+    - entity: time.profil_1_werktag_ende
+    - entity: time.profil_1_wochenende_start
+    - entity: time.profil_1_wochenende_ende
+    - entity: time.profil_1_ferien_start
+    - entity: time.profil_1_ferien_ende
+- title: Profil 2
+  path: profil_2
+  icon: mdi:timer-cog-outline
+  cards:
+  - type: entities
+    title: Profil 2
+    entities:
+    - entity: number.profil_2_budget_werktag
+    - entity: number.profil_2_budget_wochenende
+    - entity: number.profil_2_budget_ferien
+    - entity: time.profil_2_werktag_start
+    - entity: time.profil_2_werktag_ende
+    - entity: time.profil_2_wochenende_start
+    - entity: time.profil_2_wochenende_ende
+    - entity: time.profil_2_ferien_start
+    - entity: time.profil_2_ferien_ende
+- title: Kind 1
+  path: kind_1
+  icon: mdi:television-play
+  cards:
+  - type: markdown
+    content: '# Kind 1
+
+      ## Noch {{ states(''sensor.kind_1_restzeit'') }} Minuten
+
+      Heute geschaut: {{ states(''sensor.kind_1_heute_geschaut'') }} min
+
+
+      Status: {{ states(''sensor.kind_1_status'') }}'
+  - type: horizontal-stack
+    cards:
+    - type: conditional
+      conditions:
+      - entity: sensor.kind_1_status
+        state_not: leer
+      - entity: sensor.kind_1_status
+        state_not: läuft
+      - entity: sensor.kind_1_status
+        state_not: belegt
+      - entity: sensor.kind_1_status
+        state_not: gesperrt
+      card:
+        type: button
+        name: Play
+        icon: mdi:play
+        tap_action:
+          action: call-service
+          service: medienstop.start_timer
+          data:
+            child: kind_1
+    - type: conditional
+      conditions:
+      - entity: sensor.kind_1_status
+        state: läuft
+      card:
+        type: button
+        name: Pause
+        icon: mdi:pause
+        tap_action:
+          action: call-service
+          service: medienstop.pause_timer
+          data:
+            child: kind_1
+- title: Kind 2
+  path: kind_2
+  icon: mdi:television-play
+  cards:
+  - type: markdown
+    content: '# Kind 2
+
+      ## Noch {{ states(''sensor.kind_2_restzeit'') }} Minuten
+
+      Heute geschaut: {{ states(''sensor.kind_2_heute_geschaut'') }} min
+
+
+      Status: {{ states(''sensor.kind_2_status'') }}'
+  - type: horizontal-stack
+    cards:
+    - type: conditional
+      conditions:
+      - entity: sensor.kind_2_status
+        state_not: leer
+      - entity: sensor.kind_2_status
+        state_not: läuft
+      - entity: sensor.kind_2_status
+        state_not: belegt
+      - entity: sensor.kind_2_status
+        state_not: gesperrt
+      card:
+        type: button
+        name: Play
+        icon: mdi:play
+        tap_action:
+          action: call-service
+          service: medienstop.start_timer
+          data:
+            child: kind_2
+    - type: conditional
+      conditions:
+      - entity: sensor.kind_2_status
+        state: läuft
+      card:
+        type: button
+        name: Pause
+        icon: mdi:pause
+        tap_action:
+          action: call-service
+          service: medienstop.pause_timer
+          data:
+            child: kind_2
+- title: Statistik
+  path: statistik
+  icon: mdi:chart-bar
+  cards:
+  - type: entities
+    title: Kind 1
+    entities:
+    - entity: sensor.kind_1_heute_geschaut
+      name: Heute
+    - entity: sensor.kind_1_diese_woche
+      name: Diese Woche
+    - entity: sensor.kind_1_dieser_monat
+      name: Dieser Monat
+    - entity: sensor.kind_1_dieses_jahr
+      name: Dieses Jahr
+  - type: entities
+    title: Kind 2
+    entities:
+    - entity: sensor.kind_2_heute_geschaut
+      name: Heute
+    - entity: sensor.kind_2_diese_woche
+      name: Diese Woche
+    - entity: sensor.kind_2_dieser_monat
+      name: Dieser Monat
+    - entity: sensor.kind_2_dieses_jahr
+      name: Dieses Jahr
+- title: Hooks
+  path: hooks
+  icon: mdi:webhook
+  cards:
+  - type: markdown
+    content: '### Webhook-URLs
+
+      Werden per HTTP aufgerufen, wenn ein Timer startet/stoppt bzw. der Elternmodus
+      wechselt.'
+  - type: entities
+    title: Kind 1
+    entities:
+    - entity: text.kind_1_hook_aktiv
+      name: Aktiv-URL
+    - entity: text.kind_1_hook_inaktiv
+      name: Inaktiv-URL
+  - type: entities
+    title: Kind 2
+    entities:
+    - entity: text.kind_2_hook_aktiv
+      name: Aktiv-URL
+    - entity: text.kind_2_hook_inaktiv
+      name: Inaktiv-URL
+  - type: entities
+    title: Elternmodus
+    entities:
+    - entity: text.medienstop_de_elternmodus_hook_aktiv
+      name: Aktiv-URL
+    - entity: text.medienstop_de_elternmodus_hook_inaktiv
+      name: Inaktiv-URL
+

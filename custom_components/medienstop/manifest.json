@@ -1,0 +1,15 @@
+{
+  "domain": "medienstop",
+  "name": "MedienStop.de",
+  "version": "2.0.0",
+  "documentation": "https://github.com/familiekairies-cmd/ha-medienstop",
+  "issue_tracker": "https://github.com/familiekairies-cmd/ha-medienstop/issues",
+  "dependencies": [],
+  "codeowners": [
+    "@familiekairies-cmd"
+  ],
+  "requirements": [],
+  "iot_class": "local_push",
+  "config_flow": true,
+  "integration_type": "hub"
+}

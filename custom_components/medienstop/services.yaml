@@ -1,0 +1,173 @@
+# custom_components/medienstop/services.yaml
+# Service-Definitionen für die HA-Oberflaeche und für Dashboard-Buttons.
+
+start_timer:
+  name: Timer starten (Play)
+  description: >-
+    Startet/setzt den Timer eines Kindes fort. Nur möglich, wenn Restzeit > 0
+    und innerhalb des erlaubten Zeitfensters. PIN noetig, falls für das Kind gesetzt.
+  fields:
+    child:
+      name: Kind
+      description: "Kind-ID, z.B. kind_1"
+      required: true
+      example: kind_1
+      selector:
+        text:
+    pin:
+      name: PIN
+      description: PIN des Kindes (nur falls gesetzt).
+      required: false
+      selector:
+        text:
+          type: password
+
+pause_timer:
+  name: Timer pausieren (Pause)
+  description: Pausiert den laufenden Timer. Die Restzeit bleibt erhalten.
+  fields:
+    child:
+      name: Kind
+      description: "Kind-ID, z.B. kind_1"
+      required: true
+      example: kind_1
+      selector:
+        text:
+
+stop_timer:
+  name: Timer stoppen (Stop)
+  description: >-
+    Setzt die Restzeit auf 0. Das Kind hat danach für heute keine Zeit mehr
+    und kann NICHT erneut starten.
+  fields:
+    child:
+      name: Kind
+      description: "Kind-ID, z.B. kind_1"
+      required: true
+      example: kind_1
+      selector:
+        text:
+
+add_time:
+  name: Zeit gutschreiben (Eltern)
+  description: >-
+    Fuegt EINEM Kind oder ALLEN Kindern Minuten hinzu. Feld "Kind" leer lassen
+    oder "alle" eintragen = alle Kinder.
+  fields:
+    child:
+      name: Kind
+      description: "Kind-ID (z.B. kind_1). Leer oder 'alle' = alle Kinder."
+      required: false
+      example: kind_1
+      selector:
+        text:
+    minutes:
+      name: Minuten
+      description: Hinzuzufuegende Minuten.
+      required: true
+      example: 15
+      selector:
+        number:
+          min: 1
+          max: 240
+          step: 1
+          unit_of_measurement: min
+
+set_pin:
+  name: PIN setzen/löschen (Eltern)
+  description: Setzt den PIN eines Kindes neu (leer lassen = PIN entfernen).
+  fields:
+    child:
+      name: Kind
+      description: "Kind-ID, z.B. kind_1"
+      required: true
+      example: kind_1
+      selector:
+        text:
+    pin:
+      name: Neuer PIN
+      description: Leer lassen, um den PIN zu entfernen.
+      required: false
+      selector:
+        text:
+
+apply_budgets_now:
+  name: Budgets jetzt anwenden
+  description: >-
+    Setzt die Restzeit aller Kinder sofort auf das heutige Budget
+    (sonst passiert das automatisch um Mitternacht).
+
+create_dashboard:
+  name: Dashboard-Vorlage erstellen
+  description: >-
+    Erzeugt eine fertige Dashboard-Vorlage (Eltern- + Kinder-Ansicht) als
+    kopierbare Benachrichtigung. Ohne Angaben wird die eingestellte Anzahl
+    Kinder/Profile verwendet.
+  fields:
+    children:
+      name: Anzahl Kinder
+      description: Optional - sonst wie eingerichtet.
+      required: false
+      example: 3
+      selector:
+        number:
+          min: 1
+          max: 9
+          step: 1
+    profiles:
+      name: Anzahl Profile
+      description: Optional - sonst wie eingerichtet.
+      required: false
+      example: 2
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
+
+play_media:
+  name: Video/Bild auf den Fernseher streamen
+  description: >-
+    Spielt eine Medien-URL (mp4, Bild, Audio) auf der als Fernseher gewählten
+    media_player-Entity ab.
+  fields:
+    media:
+      name: Medien-Datei (auswählen)
+      description: Im Media-Browser eine Datei auswählen.
+      required: false
+      selector:
+        media:
+    url:
+      name: oder Medien-URL
+      description: Alternativ direkte URL/Pfad (http/https oder media-source://...).
+      required: false
+      example: https://example.com/abschied.mp4
+      selector:
+        text:
+    content_type:
+      name: Medientyp
+      description: "Optional: video, image oder music (sonst automatisch)."
+      required: false
+      example: video
+      selector:
+        select:
+          options:
+            - video
+            - image
+            - music
+
+test_video:
+  name: Video testen
+  description: Spielt eines der konfigurierten Videos sofort zum Testen ab.
+  fields:
+    which:
+      name: Welches Video
+      description: timeup (Abschied), limit (Zeitfenster-Ende) oder notimer (Hinweis).
+      required: false
+      default: timeup
+      selector:
+        select:
+          options:
+            - timeup
+            - limit
+            - notimer

@@ -1,0 +1,16 @@
+# AUTOMATISCHE Kinder-Uebersicht - skaliert von selbst auf JEDE Kinderzahl.
+# Voraussetzung: HACS-Karte "auto-entities" (https://github.com/thomasloven/lovelace-auto-entities).
+# Diese Karte sucht automatisch alle Kind-Status-/Restzeit-Sensoren und listet sie.
+# Steuer-Buttons (Play/Pause) bleibt pro Kind manuell (siehe blaupause_pro_kind.yaml),
+# da Buttons mit Service-Aufruf nicht automatisch erzeugt werden koennen.
+type: custom:auto-entities
+card:
+  type: entities
+  title: Alle Kinder - Restzeit & Status
+filter:
+  include:
+    - entity_id: sensor.kind_*_restzeit
+    - entity_id: sensor.kind_*_status
+  exclude: []
+sort:
+  method: friendly_name

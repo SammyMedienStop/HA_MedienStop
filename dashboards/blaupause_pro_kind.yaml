@@ -1,0 +1,54 @@
+# BLAUPAUSE: Steuer-Karte fuer EIN Kind (Kinder-Dashboard, Variante gemeinsam).
+# So oft kopieren wie du Kinder hast und 'kind_1' -> 'kind_2', 'kind_3' ... ersetzen.
+# Einfuegen unter 'cards:' deines Dashboards.
+
+type: vertical-stack
+cards:
+- type: glance
+  name: Kind 1
+  entities:
+  - entity: sensor.kind_1_restzeit
+  - entity: sensor.kind_1_status
+- type: entities
+  entities:
+  - entity: text.kind_1_pin
+    name: PIN eingeben
+- type: horizontal-stack
+  cards:
+  - type: conditional
+    conditions:
+    - entity: sensor.kind_1_status
+      state_not: leer
+    - entity: sensor.kind_1_status
+      state_not: laeuft
+    card:
+      type: button
+      name: Play
+      icon: mdi:play
+      tap_action:
+        action: call-service
+        service: medienstop.start_timer
+        data:
+          child: kind_1
+          pin: '{{ states(''text.kind_1_pin'') }}'
+  - type: conditional
+    conditions:
+    - entity: sensor.kind_1_status
+      state: laeuft
+    card:
+      type: button
+      name: Pause
+      icon: mdi:pause
+      tap_action:
+        action: call-service
+        service: medienstop.pause_timer
+        data:
+          child: kind_1
+  - type: button
+    name: Stop
+    icon: mdi:stop
+    tap_action:
+      action: call-service
+      service: medienstop.stop_timer
+      data:
+        child: kind_1
