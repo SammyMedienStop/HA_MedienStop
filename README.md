@@ -91,3 +91,15 @@ Wiedereinstieg ins Projekt: zuerst [`AGENTS.md`](AGENTS.md) lesen, dann
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (Aufbau/Logik),
 [`docs/PATCHLOG.md`](docs/PATCHLOG.md) (Fixes + Ursachen) und
 [`docs/REFERENCE.md`](docs/REFERENCE.md) (Services/Entities/Config).
+
+
+## Videos für andere bereitstellen
+Die drei „Abschalt-Videos" liegen im Ordner [`media/`](media) (mit Zuordnung und
+Installations-Anleitung in [`media/README.md`](media/README.md)). Sie sind **nicht**
+Teil der HACS-Installation – jede/r Nutzer/in muss sie einmal in den eigenen
+Home-Assistant-Ordner `config/media/` kopieren und in *MedienStop.de → Konfigurieren
+→ Videos* auswählen.
+
+Zum Teilen am einfachsten: das gebündelte **`medienstop-media.zip`** (Release-Anhang
+oder direkt als Datei) an die Person geben – entpacken, die drei `.mp4` nach
+`config/media/` legen, fertig.
