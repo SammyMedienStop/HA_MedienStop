@@ -2,11 +2,11 @@
   "domain": "medienstop",
   "name": "MedienStop.de",
   "version": "2.0.2",
-  "documentation": "https://github.com/familiekairies-cmd/ha-medienstop",
-  "issue_tracker": "https://github.com/familiekairies-cmd/ha-medienstop/issues",
+  "documentation": "https://github.com/SammyMedienStop/HA_MedienStop",
+  "issue_tracker": "https://github.com/SammyMedienStop/HA_MedienStop/issues",
   "dependencies": [],
   "codeowners": [
-    "@familiekairies-cmd"
+    "@SammyMedienStop"
   ],
   "requirements": [],
   "iot_class": "local_push",
