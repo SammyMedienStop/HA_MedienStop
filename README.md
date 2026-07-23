@@ -59,6 +59,16 @@ MedienStop-Idee.
 - **Tab-Sichtbarkeit je Benutzer** (Kinder sehen nur ihren Tab), update-fest.
 - **Dashboard-Generator** auf Knopfdruck + **Diagnose-Tools**.
 
+## 📸 Screenshots
+
+![Überblick: Integration, Budgets, Steuerung und Abschalt-Ansagen](https://raw.githubusercontent.com/SammyMedienStop/HA_MedienStop/main/docs/screenshots/00_uebersicht.png)
+
+| Budgets & Zeitfenster | Video-/Audio-Ansagen |
+|---|---|
+| ![Budgets & Zeitfenster](https://raw.githubusercontent.com/SammyMedienStop/HA_MedienStop/main/docs/screenshots/01_budgets-zeitfenster.png) | ![Video-/Audio-Ansagen](https://raw.githubusercontent.com/SammyMedienStop/HA_MedienStop/main/docs/screenshots/10_videos-audio.png) |
+
+Mehr Screenshots im Ordner [`docs/screenshots/`](docs/screenshots/).
+
 ## ✅ Voraussetzungen
 
 - Home Assistant **2024.4** oder neuer.
