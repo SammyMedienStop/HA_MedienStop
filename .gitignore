@@ -9,3 +9,6 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+
+# Entwickler-/Kontextdatei, nicht ins Repo synchronisieren
+AGENTS.md

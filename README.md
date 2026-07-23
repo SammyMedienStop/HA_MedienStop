@@ -206,6 +206,13 @@ auch einen reinen **Lautsprecher** als „Video-Player" eintragen.
 Ideen, Fehler oder Wünsche? Gern als [Issue][issues] melden.
 Rund um Medienerziehung & Jugendschutz: **[MedienStop.de](https://medienstop.de)**.
 
+## ❤️ Unterstützen
+
+Wenn dir MedienStop.de hilft, freue ich mich über eine kleine Spende – das hält das
+Projekt am Leben:
+
+👉 **[Per PayPal spenden](https://www.paypal.com/donate/?hosted_button_id=JN23TQFMSX5EU)**
+
 ## 📄 Lizenz
 
 Veröffentlicht unter der **[MIT-Lizenz](LICENSE)**.
