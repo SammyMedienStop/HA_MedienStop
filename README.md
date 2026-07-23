@@ -5,9 +5,9 @@
 
 **Ein Zusatzprojekt von [MedienStop.de](https://medienstop.de) – der Kindersicherung, die Eltern wirklich verstehen.**
 
-[![Home Assistant][ha-badge]][ha] [![HACS][hacs-badge]][hacs] [![Release][release-badge]][releases] [![License: MIT][mit-badge]][mit] [![Website][web-badge]][website]
+[![Home Assistant][ha-badge]][ha] [![HACS][hacs-badge]][hacs] [![Release][release-badge]][releases] [![License: MIT][mit-badge]][mit] [![Website][web-badge]][website] [![Spenden][donate-badge]][donate]
 
-[Website](https://medienstop.de) · [Installation](#-installation) · [Einrichtung](#-einrichtung) · [Dashboard](#-dashboard-einrichten) · [Videos](#-abschalt-videos) · [Audio](#-audio-ansagen-zum-download) · [Fehlersuche](#-fehlersuche)
+[Website](https://medienstop.de) · [Installation](#-installation) · [Einrichtung](#-einrichtung) · [Dashboard](#-dashboard-einrichten) · [Videos](#-abschalt-videos) · [Audio](#-audio-ansagen-zum-download) · [Fehlersuche](#-fehlersuche) · [❤️ Spenden][donate]
 
 </div>
 
@@ -234,3 +234,5 @@ Mit ❤️ für entspanntere Fernsehabende · <a href="https://medienstop.de">Me
 [release-badge]: https://img.shields.io/github/v/release/SammyMedienStop/HA_MedienStop?display_name=tag
 [mit-badge]: https://img.shields.io/badge/License-MIT-green.svg
 [web-badge]: https://img.shields.io/badge/Web-MedienStop.de-ff7f0e
+[donate]: https://www.paypal.com/donate/?hosted_button_id=JN23TQFMSX5EU
+[donate-badge]: https://img.shields.io/badge/PayPal-Spenden-00457C?logo=paypal&logoColor=white
