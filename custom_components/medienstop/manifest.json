@@ -1,15 +1,15 @@
 {
   "domain": "medienstop",
   "name": "MedienStop.de",
-  "version": "2.0.2",
-  "documentation": "https://github.com/SammyMedienStop/HA_MedienStop",
-  "issue_tracker": "https://github.com/SammyMedienStop/HA_MedienStop/issues",
-  "dependencies": [],
   "codeowners": [
     "@SammyMedienStop"
   ],
-  "requirements": [],
-  "iot_class": "local_push",
   "config_flow": true,
-  "integration_type": "hub"
+  "dependencies": [],
+  "documentation": "https://github.com/SammyMedienStop/HA_MedienStop",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/SammyMedienStop/HA_MedienStop/issues",
+  "requirements": [],
+  "version": "2.0.2"
 }
