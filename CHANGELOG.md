@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1
+- **Neu:** Reset-Knöpfe direkt im **Statistik-Tab** der Dashboard-Vorlage – je Kind
+  und „Statistik ALLE zurücksetzen", jeweils mit **Sicherheitsabfrage**. Dashboard
+  nach dem Update einmal neu erzeugen (Knopf „Dashboard-Vorlage erstellen").
+
 ## 2.1.0
 - **Neu:** Statistik zurücksetzen – per Knopf am jeweiligen Kind-Gerät, per
   „Statistik ALLE zurücksetzen"-Knopf am Hub oder per Service

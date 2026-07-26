@@ -193,16 +193,33 @@ def build_dashboard(num_children: int, num_profiles: int,
     for n in range(1, num_children + 1):
         views.append(kid_view(n, cname(n)))
 
-    # --- Statistik-Tab: geschaute Zeit Heute/Woche/Monat/Jahr je Kind --------
-    stat_cards = []
+    # --- Statistik-Tab: geschaute Zeit + Zuruecksetzen (mit Bestaetigung) ----
+    stat_cards = [{
+        "type": "button", "name": "Statistik ALLE zurücksetzen",
+        "icon": "mdi:backup-restore",
+        "tap_action": {
+            "action": "call-service", "service": "medienstop.reset_statistics",
+            "data": {"child": "alle"},
+            "confirmation": {"text": "Wirklich die Statistik ALLER Kinder zurücksetzen?"},
+        },
+    }]
     for n in range(1, num_children + 1):
         cid = f"kind_{n}"
-        stat_cards.append({"type": "entities", "title": cname(n), "entities": [
+        ents = {"type": "entities", "title": cname(n), "entities": [
             {"entity": E(f"{cid}_watched"), "name": "Heute"},
             {"entity": E(f"{cid}_watched_week"), "name": "Diese Woche"},
             {"entity": E(f"{cid}_watched_month"), "name": "Dieser Monat"},
             {"entity": E(f"{cid}_watched_year"), "name": "Dieses Jahr"},
-        ]})
+        ]}
+        reset_btn = {
+            "type": "button", "name": "Zurücksetzen", "icon": "mdi:eye-refresh-outline",
+            "tap_action": {
+                "action": "call-service", "service": "medienstop.reset_statistics",
+                "data": {"child": cid},
+                "confirmation": {"text": f"Statistik von {cname(n)} wirklich zurücksetzen?"},
+            },
+        }
+        stat_cards.append({"type": "vertical-stack", "cards": [ents, reset_btn]})
     views.append({"title": "Statistik", "path": "statistik",
                   "icon": "mdi:chart-bar", "cards": stat_cards})
 
