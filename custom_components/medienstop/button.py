@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+import time
+
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -59,6 +61,13 @@ _NOTIF = {
             "Fernseher läuft trotzdem? Dann schaut bitte ins Protokoll nach "
             "'MedienStop schaltet Fernseher turn_off'."
         ),
+        "reset_title": "MedienStop.de – Statistik zurücksetzen",
+        "reset_all_label": "ALLE Kinder",
+        "reset_arm": (
+            "⚠️ Sicherheitsabfrage: Zum Zurücksetzen der Statistik von {name} bitte "
+            "innerhalb von {secs} Sekunden ERNEUT auf denselben Knopf drücken."
+        ),
+        "reset_done": "Statistik von {name} wurde zurückgesetzt.",
     },
     "en": {
         "dash_title": "MedienStop.de – Dashboard template",
@@ -77,6 +86,13 @@ _NOTIF = {
             "Current state of MedienStop. 'TV müsste AUS sein: True' but the TV is still "
             "running? Then check the log for 'MedienStop schaltet Fernseher turn_off'."
         ),
+        "reset_title": "MedienStop.de – Reset statistics",
+        "reset_all_label": "ALL children",
+        "reset_arm": (
+            "⚠️ Safety check: to reset the statistics of {name}, please press the same "
+            "button AGAIN within {secs} seconds."
+        ),
+        "reset_done": "Statistics of {name} have been reset.",
     },
 }
 
@@ -162,8 +178,47 @@ class VideoTestButton(MedienStopEntity, ButtonEntity):
             DOMAIN, SERVICE_TEST_VIDEO, {"which": "timeup"}, blocking=False)
 
 
-class ResetStatsAllButton(MedienStopEntity, ButtonEntity):
-    """Setzt die Statistik (geschaute Zeit) ALLER Kinder zurück - am Hub."""
+class _ResetConfirmButton(MedienStopEntity, ButtonEntity):
+    """Reset-Knopf mit Zwei-Stufen-Sicherheitsabfrage.
+
+    Entity-Buttons haben auf der Geräteseite KEINEN nativen Bestätigungsdialog.
+    Lösung: Der 1. Druck 'stellt scharf' und zeigt einen Warnhinweis; erst der
+    2. Druck innerhalb von _WINDOW Sekunden setzt die Statistik wirklich zurück.
+    So kann man nicht aus Versehen mit einem Klick alles löschen.
+    """
+
+    _WINDOW = 15.0  # Sekunden Zeitfenster für die Bestätigung
+
+    def _reset_label(self) -> str:
+        """Anzeigename für die Meldung - von der Unterklasse gesetzt."""
+        return ""
+
+    def _do_reset(self) -> None:
+        """Führt den eigentlichen Reset aus - von der Unterklasse gesetzt."""
+        raise NotImplementedError
+
+    async def async_press(self) -> None:
+        t = _NOTIF[_lang(self.hass)]
+        now = time.monotonic()
+        if now < getattr(self, "_armed_until", 0.0):
+            # 2. Druck innerhalb des Zeitfensters -> wirklich zurücksetzen.
+            self._armed_until = 0.0
+            self._do_reset()
+            msg = t["reset_done"].format(name=self._reset_label())
+        else:
+            # 1. Druck -> nur scharfstellen und nachfragen.
+            self._armed_until = now + self._WINDOW
+            msg = t["reset_arm"].format(name=self._reset_label(), secs=int(self._WINDOW))
+        await self.hass.services.async_call(
+            "persistent_notification", "create",
+            {"title": t["reset_title"], "message": msg,
+             "notification_id": f"medienstop_reset_{self._attr_unique_id}"},
+            blocking=False,
+        )
+
+
+class ResetStatsAllButton(_ResetConfirmButton):
+    """Setzt die Statistik ALLER Kinder zurück - am Hub (mit Sicherheitsabfrage)."""
 
     _attr_translation_key = "reset_stats_all"
     _attr_icon = "mdi:backup-restore"
@@ -173,12 +228,15 @@ class ResetStatsAllButton(MedienStopEntity, ButtonEntity):
         self._attr_unique_id = f"{self._entry_id}_reset_stats_all"
         self._attr_device_info = hub_device(self._entry_id)
 
-    async def async_press(self) -> None:
+    def _reset_label(self) -> str:
+        return _NOTIF[_lang(self.hass)]["reset_all_label"]
+
+    def _do_reset(self) -> None:
         self.manager.reset_statistics(None, "all")
 
 
-class ResetStatsChildButton(MedienStopEntity, ButtonEntity):
-    """Setzt die Statistik (geschaute Zeit) EINES Kindes zurück - am Kind-Gerät."""
+class ResetStatsChildButton(_ResetConfirmButton):
+    """Setzt die Statistik EINES Kindes zurück - am Kind-Gerät (mit Sicherheitsabfrage)."""
 
     _attr_translation_key = "reset_stats"
     _attr_icon = "mdi:eye-refresh-outline"
@@ -191,5 +249,10 @@ class ResetStatsChildButton(MedienStopEntity, ButtonEntity):
             self._entry_id, cid, manager.children[cid]["name"]
         )
 
-    async def async_press(self) -> None:
+    def _reset_label(self) -> str:
+        return device_display_name(
+            self.hass, self._entry_id, self._cid, self.manager.children[self._cid]["name"]
+        )
+
+    def _do_reset(self) -> None:
         self.manager.reset_statistics(self._cid, "all")

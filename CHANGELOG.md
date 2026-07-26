@@ -1,10 +1,20 @@
 # Changelog
 
-## Unveröffentlicht
+## 2.3.2
+- **Verbessert:** Die **Reset-Knöpfe im Statistik-Tab** sind jetzt kompakte
+  Pillen-Buttons im Karten-Footer (Stil wie „+15/+30/Stop") statt großer Kacheln –
+  je Kind einer, jeweils mit Sicherheitsabfrage.
+- **Geändert:** „Statistik ALLE zurücksetzen" gibt es nur noch auf der
+  **Geräte-/Integrationsseite** (bei Diagnose, Video-Test usw.), nicht mehr im
+  Dashboard.
+- **Neu:** Die Reset-Knöpfe **auf der Geräteseite** haben jetzt eine
+  **Sicherheitsabfrage** – 1× drücken stellt scharf und warnt, erst der 2. Druck
+  innerhalb von 15 Sekunden setzt wirklich zurück (Entity-Buttons haben keinen
+  eingebauten Bestätigungsdialog).
 - **i18n:** Auch die **Service-Namen und -Beschreibungen** (inkl. Feldbeschriftungen)
-  folgen jetzt der Home-Assistant-Sprache – die `services`-Sektion in
-  `translations/de.json`, `translations/en.json` und `strings.json`. Kommt mit dem
-  nächsten gebündelten Release in HACS an.
+  folgen jetzt der Home-Assistant-Sprache.
+- Nach dem Update einmal **„Dashboard-Vorlage erstellen"** drücken und die neue
+  Vorlage einfügen, damit der kompakte Reset erscheint.
 
 ## 2.3.1
 - **Neu:** Auch die **Dashboard-Vorlage** und die **Benachrichtigungen**

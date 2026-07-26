@@ -248,33 +248,31 @@ def build_dashboard(num_children: int, num_profiles: int,
     for n in range(1, num_children + 1):
         views.append(kid_view(n, cname(n)))
 
-    # --- Statistik-Tab: geschaute Zeit + Zuruecksetzen (mit Bestaetigung) ----
-    stat_cards = [{
-        "type": "button", "name": L["reset_all"],
-        "icon": "mdi:backup-restore",
-        "tap_action": {
-            "action": "call-service", "service": "medienstop.reset_statistics",
-            "data": {"child": "alle"},
-            "confirmation": {"text": L["confirm_all"]},
-        },
-    }]
+    # --- Statistik-Tab: geschaute Zeit + kompakter Reset je Kind -------------
+    #   Der Reset sitzt als kleiner Pillen-Knopf im Karten-Footer (Stil wie
+    #   +15/+30/Stop) und fragt vor dem Zuruecksetzen nach (confirmation).
+    #   "ALLE zuruecksetzen" gibt es bewusst NICHT im Dashboard, sondern nur als
+    #   Knopf auf der Geraete-/Integrationsseite (dort mit Sicherheitsabfrage).
+    stat_cards = []
     for n in range(1, num_children + 1):
         cid = f"kind_{n}"
-        ents = {"type": "entities", "title": cname(n), "entities": [
-            {"entity": E(f"{cid}_watched"), "name": L["today"]},
-            {"entity": E(f"{cid}_watched_week"), "name": L["week"]},
-            {"entity": E(f"{cid}_watched_month"), "name": L["month"]},
-            {"entity": E(f"{cid}_watched_year"), "name": L["year"]},
-        ]}
-        reset_btn = {
-            "type": "button", "name": L["reset"], "icon": "mdi:eye-refresh-outline",
-            "tap_action": {
-                "action": "call-service", "service": "medienstop.reset_statistics",
-                "data": {"child": cid},
-                "confirmation": {"text": L["confirm_child"].format(name=cname(n))},
-            },
-        }
-        stat_cards.append({"type": "vertical-stack", "cards": [ents, reset_btn]})
+        stat_cards.append({
+            "type": "entities", "title": cname(n),
+            "entities": [
+                {"entity": E(f"{cid}_watched"), "name": L["today"]},
+                {"entity": E(f"{cid}_watched_week"), "name": L["week"]},
+                {"entity": E(f"{cid}_watched_month"), "name": L["month"]},
+                {"entity": E(f"{cid}_watched_year"), "name": L["year"]},
+            ],
+            "footer": {"type": "buttons", "entities": [
+                {"entity": E(f"{cid}_watched"), "name": L["reset"],
+                 "icon": "mdi:eye-refresh-outline",
+                 "tap_action": {
+                     "action": "call-service", "service": "medienstop.reset_statistics",
+                     "data": {"child": cid},
+                     "confirmation": {"text": L["confirm_child"].format(name=cname(n))}}},
+            ]},
+        })
     # Elternzeit-Statistik (am Hub gezählt)
     stat_cards.append({"type": "entities", "title": L["parent_time"], "entities": [
         {"entity": E("parent_watched"), "name": L["today"]},
