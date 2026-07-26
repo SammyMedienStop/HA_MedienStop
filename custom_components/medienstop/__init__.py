@@ -933,17 +933,28 @@ def _async_register_services(hass: HomeAssistant) -> None:
         ids = resolve_entity_ids(hass, mgrs[0].entry.entry_id) if mgrs else {}
         tab_users = mgrs[0].tab_users if mgrs else {}
         admin_users = mgrs[0].admin_users if mgrs else []
+        lang = "en" if (hass.config.language or "de")[:2].lower() == "en" else "de"
         yaml_str = build_dashboard_yaml(children, profiles, child_names, profile_names, ids,
-                                        tab_users, admin_users)
-        message = (
-            f"Vorlage für {children} Kind(er) und {profiles} Profil(e). "
-            "Kopieren und in Einstellungen -> Dashboards -> neues Dashboard -> "
-            "Raw-Konfigurationseditor einfuegen.\n\n"
-            "```yaml\n" + yaml_str + "```\n"
-        )
+                                        tab_users, admin_users, lang)
+        if lang == "en":
+            title = "MedienStop.de – Dashboard template"
+            message = (
+                f"Template for {children} child(ren) and {profiles} profile(s). "
+                "Copy it and paste into Settings -> Dashboards -> new dashboard -> "
+                "Raw configuration editor.\n\n"
+                "```yaml\n" + yaml_str + "```\n"
+            )
+        else:
+            title = "MedienStop.de – Dashboard-Vorlage"
+            message = (
+                f"Vorlage für {children} Kind(er) und {profiles} Profil(e). "
+                "Kopieren und in Einstellungen -> Dashboards -> neues Dashboard -> "
+                "Raw-Konfigurationseditor einfuegen.\n\n"
+                "```yaml\n" + yaml_str + "```\n"
+            )
         await hass.services.async_call(
             "persistent_notification", "create",
-            {"title": "MedienStop.de – Dashboard-Vorlage", "message": message,
+            {"title": title, "message": message,
              "notification_id": "medienstop_dashboard"}, blocking=False,
         )
 
@@ -975,23 +986,39 @@ def _async_register_services(hass: HomeAssistant) -> None:
 
     async def _test_video(call: ServiceCall) -> None:
         which = call.data.get("which", "timeup")
+        # Sprache nach HA-Einstellung (en -> Englisch, sonst Deutsch).
+        en = (hass.config.language or "de")[:2].lower() == "en"
+        title = "MedienStop.de – Video test" if en else "MedienStop.de – Video-Test"
         for mgr in _managers(hass):
             url = {"timeup": mgr.video_timeup, "limit": mgr.video_limit,
                    "notimer": mgr.video_notimer}.get(which, "")
+            tgt = mgr.media_target()
             if not url:
-                msg = (f"Fuer '{which}' ist kein Video gesetzt. Bitte unter "
+                msg = (f"No video is set for '{which}'. Please pick one under "
+                       "Configure -> Videos."
+                       if en else
+                       f"Fuer '{which}' ist kein Video gesetzt. Bitte unter "
                        "Konfigurieren -> Videos auswaehlen.")
-            elif not (mgr.media_target() or "").startswith("media_player."):
-                msg = (f"Das Streaming-Ziel **{mgr.media_target()}** ist kein media_player. "
+            elif not (tgt or "").startswith("media_player."):
+                msg = (f"The streaming target **{tgt}** is not a media_player. Please "
+                       "choose a video player (media_player) under Configure."
+                       if en else
+                       f"Das Streaming-Ziel **{tgt}** ist kein media_player. "
                        "Bitte unter Konfigurieren einen Video-Player (media_player) waehlen.")
             else:
                 mgr.test_video(which)
-                msg = (f"Sende Video an **{mgr.media_target()}**:\n{url}\n\n"
+                msg = (f"Sending video to **{tgt}**:\n{url}\n\n"
+                       "Does the **browser** open instead of the video picture? Then this "
+                       "target is not a directly streamable player (e.g. Samsung/LG/Android "
+                       "TV). In that case choose a **Cast/Chromecast player** as 'video "
+                       "player' under Configure."
+                       if en else
+                       f"Sende Video an **{tgt}**:\n{url}\n\n"
                        "Oeffnet sich der **Browser** statt des Videobilds? Dann ist dieses Ziel "
                        "kein direkt streamfaehiger Player (z.B. Samsung/LG/Android-TV). Waehle dann "
                        "unter Konfigurieren einen **Cast-/Chromecast-Player** als 'Video-Player'.")
             await hass.services.async_call("persistent_notification", "create", {
-                "title": "MedienStop.de – Video-Test", "message": msg,
+                "title": title, "message": msg,
                 "notification_id": "medienstop_videotest"}, blocking=False)
 
     hass.services.async_register(DOMAIN, SERVICE_TEST_VIDEO, _test_video, schema=vol.Schema({

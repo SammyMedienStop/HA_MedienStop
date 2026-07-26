@@ -33,17 +33,52 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
     async_add_entities(entities)
 
 
-_INSTRUCTIONS = (
-    "**So baust du daraus dein Dashboard (kein Technikwissen noetig):**\n\n"
-    "1. Einstellungen -> Dashboards -> *Dashboard hinzufügen* -> leeres Dashboard.\n"
-    "2. Dashboard öffnen, oben rechts Stift (Bearbeiten), dann drei Punkte -> "
-    "**Raw-Konfigurationseditor**.\n"
-    "3. Den Text unten komplett markieren, kopieren, dort einfuegen -> Speichern.\n\n"
-    "Aufbau: je ein Tab für **Eltern**, für jedes **Profil** und für jedes **Kind**. "
-    "In jedem Kinder-Tab kannst du über *Tab bearbeiten -> Sichtbarkeit* festlegen, "
-    "welcher Benutzer ihn sieht.\n\n"
-    "---\n"
-)
+def _lang(hass) -> str:
+    """"en" wenn die HA-Sprache Englisch ist, sonst "de"."""
+    return "en" if (hass.config.language or "de")[:2].lower() == "en" else "de"
+
+
+# Zweisprachige Benachrichtigungs-Texte (folgt der HA-Sprache).
+_NOTIF = {
+    "de": {
+        "dash_title": "MedienStop.de – Dashboard-Vorlage",
+        "dash_instructions": (
+            "**So baust du daraus dein Dashboard (kein Technikwissen noetig):**\n\n"
+            "1. Einstellungen -> Dashboards -> *Dashboard hinzufügen* -> leeres Dashboard.\n"
+            "2. Dashboard öffnen, oben rechts Stift (Bearbeiten), dann drei Punkte -> "
+            "**Raw-Konfigurationseditor**.\n"
+            "3. Den Text unten komplett markieren, kopieren, dort einfuegen -> Speichern.\n\n"
+            "Aufbau: je ein Tab für **Eltern**, für jedes **Profil** und für jedes **Kind**. "
+            "In jedem Kinder-Tab kannst du über *Tab bearbeiten -> Sichtbarkeit* festlegen, "
+            "welcher Benutzer ihn sieht.\n\n---\n"
+        ),
+        "dash_template_for": "_Vorlage für {c} Kind(er) und {p} Profil(e):_",
+        "diag_title": "MedienStop.de – Diagnose",
+        "diag_intro": (
+            "Aktueller Zustand von MedienStop. 'TV müsste AUS sein: True' und der "
+            "Fernseher läuft trotzdem? Dann schaut bitte ins Protokoll nach "
+            "'MedienStop schaltet Fernseher turn_off'."
+        ),
+    },
+    "en": {
+        "dash_title": "MedienStop.de – Dashboard template",
+        "dash_instructions": (
+            "**How to build your dashboard (no tech skills needed):**\n\n"
+            "1. Settings -> Dashboards -> *Add dashboard* -> empty dashboard.\n"
+            "2. Open the dashboard, top-right pencil (Edit), then the three dots -> "
+            "**Raw configuration editor**.\n"
+            "3. Select all the text below, copy it, paste it there -> Save.\n\n"
+            "Layout: one tab each for **Parents**, every **Profile** and every **Child**. "
+            "In each child tab you can set who may see it via *Edit tab -> Visibility*.\n\n---\n"
+        ),
+        "dash_template_for": "_Template for {c} child(ren) and {p} profile(s):_",
+        "diag_title": "MedienStop.de – Diagnostics",
+        "diag_intro": (
+            "Current state of MedienStop. 'TV müsste AUS sein: True' but the TV is still "
+            "running? Then check the log for 'MedienStop schaltet Fernseher turn_off'."
+        ),
+    },
+}
 
 
 class GenerateDashboardButton(MedienStopEntity, ButtonEntity):
@@ -57,6 +92,8 @@ class GenerateDashboardButton(MedienStopEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         m = self.manager
+        lang = _lang(self.hass)
+        t = _NOTIF[lang]
         # Echte (ggf. umbenannte) Namen einsammeln.
         child_names = {
             cid: device_display_name(self.hass, self._entry_id, cid, m.children[cid]["name"])
@@ -69,16 +106,16 @@ class GenerateDashboardButton(MedienStopEntity, ButtonEntity):
         ids = resolve_entity_ids(self.hass, self._entry_id)
         yaml_str = build_dashboard_yaml(
             m.num_children, m.num_profiles, child_names, profile_names, ids,
-            m.tab_users, m.admin_users,
+            m.tab_users, m.admin_users, lang,
         )
         message = (
-            _INSTRUCTIONS
-            + f"_Vorlage für {m.num_children} Kind(er) und {m.num_profiles} Profil(e):_\n\n"
+            t["dash_instructions"]
+            + t["dash_template_for"].format(c=m.num_children, p=m.num_profiles) + "\n\n"
             + "```yaml\n" + yaml_str + "```\n"
         )
         await self.hass.services.async_call(
             "persistent_notification", "create",
-            {"title": "MedienStop.de – Dashboard-Vorlage", "message": message,
+            {"title": t["dash_title"], "message": message,
              "notification_id": "medienstop_dashboard"}, blocking=False,
         )
 
@@ -96,18 +133,14 @@ class DiagnoseButton(MedienStopEntity, ButtonEntity):
         self._attr_device_info = hub_device(self._entry_id)
 
     async def async_press(self) -> None:
+        t = _NOTIF[_lang(self.hass)]
         report = self.manager.diagnostics_text()
         # Prüfung sofort auslösen (schaltet den TV ab, falls noetig).
         self.manager._enforce_tv()
-        message = (
-            "Aktueller Zustand von MedienStop. 'TV müsste AUS sein: True' und der "
-            "Fernseher läuft trotzdem? Dann schaut bitte ins Protokoll nach "
-            "'MedienStop schaltet Fernseher turn_off'.\n\n"
-            "```\n" + report + "\n```\n"
-        )
+        message = t["diag_intro"] + "\n\n```\n" + report + "\n```\n"
         await self.hass.services.async_call(
             "persistent_notification", "create",
-            {"title": "MedienStop.de – Diagnose", "message": message,
+            {"title": t["diag_title"], "message": message,
              "notification_id": "medienstop_diagnose"}, blocking=False,
         )
 

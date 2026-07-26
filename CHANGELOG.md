@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.1
+- **Neu:** Auch die **Dashboard-Vorlage** und die **Benachrichtigungen**
+  (Dashboard-Erstellung, Diagnose, Video-Test) folgen jetzt der Home-Assistant-Sprache
+  – Tabs, Karten, Knöpfe, Diagramm-Titel und Sicherheitsabfragen erscheinen auf
+  **Englisch**, wenn die Sprache auf English steht, sonst auf **Deutsch**.
+- Nach dem Update einmal **„Dashboard-Vorlage erstellen"** drücken und die neue Vorlage
+  einfügen, damit die übersetzten Beschriftungen erscheinen.
+
 ## 2.3.0
 - **Neu: Englischer Modus / English mode.** Die Integration folgt jetzt der
   eingestellten Home-Assistant-Sprache **je Benutzer** (Profil → Sprache → English)
