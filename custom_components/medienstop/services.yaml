@@ -171,3 +171,35 @@ test_video:
             - timeup
             - limit
             - notimer
+
+reset_statistics:
+  name: Statistik zurücksetzen
+  description: >-
+    Setzt die geschaute Zeit (Statistik) zurück - für EIN Kind oder ALLE.
+    Feld "Kind" leer lassen oder "alle" eintragen = alle Kinder.
+  fields:
+    child:
+      name: Kind
+      description: "Kind-ID (z.B. kind_1). Leer oder 'alle' = alle Kinder."
+      required: false
+      example: kind_1
+      selector:
+        text:
+    scope:
+      name: Umfang
+      description: "Welche Zeiträume zurückgesetzt werden (Standard: alles)."
+      required: false
+      default: all
+      selector:
+        select:
+          options:
+            - label: "Alles (Heute + Woche + Monat + Jahr)"
+              value: all
+            - label: "Nur Heute"
+              value: today
+            - label: "Nur diese Woche"
+              value: week
+            - label: "Nur diesen Monat"
+              value: month
+            - label: "Nur dieses Jahr"
+              value: year

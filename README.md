@@ -55,6 +55,8 @@ MedienStop-Idee.
   „Schlafenszeit" und „keine TV-Zeit" – je mit eigener Verzögerung, Auswahl per
   Media-Browser, streambar via Cast/DLNA.
 - **Statistik** je Kind: heute / Woche / Monat / Jahr geschaut.
+- **Statistik zurücksetzen** – pro Kind oder für alle (Knopf am Gerät/Hub oder
+  Service `medienstop.reset_statistics`).
 - **Webhooks** je Kind und für den Elternmodus – für eigene Automatisierungen.
 - **Tab-Sichtbarkeit je Benutzer** (Kinder sehen nur ihren Tab), update-fest.
 - **Dashboard-Generator** auf Knopfdruck + **Diagnose-Tools**.

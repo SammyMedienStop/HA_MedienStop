@@ -13,14 +13,24 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .dashboard import build_dashboard_yaml
-from .entity import MedienStopEntity, device_display_name, hub_device, resolve_entity_ids
+from .entity import (
+    MedienStopEntity,
+    child_device,
+    device_display_name,
+    hub_device,
+    resolve_entity_ids,
+)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
                             async_add_entities: AddEntitiesCallback) -> None:
     manager = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([GenerateDashboardButton(manager), DiagnoseButton(manager),
-                        VideoTestButton(manager)])
+    entities = [GenerateDashboardButton(manager), DiagnoseButton(manager),
+                VideoTestButton(manager), ResetStatsAllButton(manager)]
+    # Pro Kind ein eigener "Statistik zurücksetzen"-Knopf.
+    for cid in manager.children:
+        entities.append(ResetStatsChildButton(manager, cid))
+    async_add_entities(entities)
 
 
 _INSTRUCTIONS = (
@@ -117,3 +127,36 @@ class VideoTestButton(MedienStopEntity, ButtonEntity):
         from .const import DOMAIN, SERVICE_TEST_VIDEO
         await self.hass.services.async_call(
             DOMAIN, SERVICE_TEST_VIDEO, {"which": "timeup"}, blocking=False)
+
+
+class ResetStatsAllButton(MedienStopEntity, ButtonEntity):
+    """Setzt die Statistik (geschaute Zeit) ALLER Kinder zurück - am Hub."""
+
+    _attr_name = "Statistik ALLE zurücksetzen"
+    _attr_icon = "mdi:backup-restore"
+
+    def __init__(self, manager) -> None:
+        super().__init__(manager)
+        self._attr_unique_id = f"{self._entry_id}_reset_stats_all"
+        self._attr_device_info = hub_device(self._entry_id)
+
+    async def async_press(self) -> None:
+        self.manager.reset_statistics(None, "all")
+
+
+class ResetStatsChildButton(MedienStopEntity, ButtonEntity):
+    """Setzt die Statistik (geschaute Zeit) EINES Kindes zurück - am Kind-Gerät."""
+
+    _attr_name = "Statistik zurücksetzen"
+    _attr_icon = "mdi:eye-refresh-outline"
+
+    def __init__(self, manager, cid: str) -> None:
+        super().__init__(manager)
+        self._cid = cid
+        self._attr_unique_id = f"{self._entry_id}_{cid}_reset_stats"
+        self._attr_device_info = child_device(
+            self._entry_id, cid, manager.children[cid]["name"]
+        )
+
+    async def async_press(self) -> None:
+        self.manager.reset_statistics(self._cid, "all")

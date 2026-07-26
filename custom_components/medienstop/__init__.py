@@ -37,6 +37,7 @@ from .const import (
     ATTR_CHILD,
     CONF_NAMES,
     ATTR_MINUTES,
+    ATTR_SCOPE,
     ATTR_PIN,
     CONF_NUM_CHILDREN,
     CONF_ADMIN_USERS,
@@ -57,6 +58,7 @@ from .const import (
     SERVICE_CREATE_DASHBOARD,
     SERVICE_PLAY_MEDIA,
     SERVICE_TEST_VIDEO,
+    SERVICE_RESET_STATS,
     SERVICE_PAUSE,
     SERVICE_SET_PIN,
     SERVICE_START,
@@ -368,6 +370,26 @@ class MedienStopManager:
         for c in targets:
             self.children[c]["remaining"] = max(0, self.children[c]["remaining"] + int(minutes))
         _LOGGER.info("%s Min gutgeschrieben für: %s", minutes, list(targets))
+        self._notify()
+
+    def reset_statistics(self, cid: str | None = None, scope: str = "all") -> None:
+        """Setzt die geschaute Zeit (Statistik) zurück.
+
+        cid=None/""/"alle" -> ALLE Kinder, sonst nur das genannte Kind.
+        scope: "all" (Heute+Woche+Monat+Jahr), "today", "week", "month" oder "year".
+        """
+        targets = list(self.children.keys()) if cid in (None, "", "all", "alle") else [cid]
+        # Welche Zähler zurückgesetzt werden (Standard: alle Zeiträume).
+        keys = {
+            "today": ["watched"],
+            "week": ["watched_week"],
+            "month": ["watched_month"],
+            "year": ["watched_year"],
+        }.get(scope, ["watched", "watched_week", "watched_month", "watched_year"])
+        for c in targets:
+            for k in keys:
+                self.children[c][k] = 0
+        _LOGGER.info("Statistik zurückgesetzt (%s) für: %s", scope, targets)
         self._notify()
 
     def set_pin(self, cid: str, pin: str) -> None:
@@ -812,6 +834,13 @@ def _async_register_services(hass: HomeAssistant) -> None:
         vol.Required(ATTR_CHILD): cv.string,
         vol.Optional(ATTR_PIN, default=""): cv.string,
     })
+    # reset_statistics: child OPTIONAL -> leer/alle = alle Kinder
+    reset_schema = vol.Schema({
+        vol.Optional(ATTR_CHILD): cv.string,
+        vol.Optional(ATTR_SCOPE, default="all"): vol.In(
+            ["all", "today", "week", "month", "year"]
+        ),
+    })
 
     def _mgr_for(child: str) -> MedienStopManager:
         for mgr in _managers(hass):
@@ -844,6 +873,15 @@ def _async_register_services(hass: HomeAssistant) -> None:
     async def _apply(call: ServiceCall) -> None:
         for mgr in _managers(hass):
             mgr.apply_budgets_now()
+
+    async def _reset_stats(call: ServiceCall) -> None:
+        child = call.data.get(ATTR_CHILD)
+        scope = call.data.get(ATTR_SCOPE, "all")
+        if child in (None, "", "all", "alle"):
+            for mgr in _managers(hass):
+                mgr.reset_statistics(None, scope)
+        else:
+            _mgr_for(child).reset_statistics(child, scope)
 
     async def _create_dashboard(call: ServiceCall) -> None:
         # Standard: Anzahl aus der ersten Konfiguration; optional überschreibbar.
@@ -884,6 +922,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, SERVICE_ADD_TIME, _add, schema=add_schema)
     hass.services.async_register(DOMAIN, SERVICE_SET_PIN, _setpin, schema=pin_schema)
     hass.services.async_register(DOMAIN, SERVICE_APPLY_BUDGETS, _apply, schema=vol.Schema({}))
+    hass.services.async_register(DOMAIN, SERVICE_RESET_STATS, _reset_stats, schema=reset_schema)
     async def _play_media(call: ServiceCall) -> None:
         media = call.data.get("media")
         if media:

@@ -74,11 +74,13 @@ SERVICE_APPLY_BUDGETS = "apply_budgets_now"  # Budgets sofort als Restzeit anwen
 SERVICE_CREATE_DASHBOARD = "create_dashboard"  # Dashboard-Vorlage als Benachrichtigung
 SERVICE_PLAY_MEDIA = "play_media"             # Video/Bild an den Fernseher streamen
 SERVICE_TEST_VIDEO = "test_video"             # konfiguriertes Video sofort testen
+SERVICE_RESET_STATS = "reset_statistics"      # geschaute Zeit (Statistik) zuruecksetzen
 
 # --- Service-/Attribut-Felder ------------------------------------------------
 ATTR_CHILD = "child"      # Kind-ID, z.B. kind_1
 ATTR_PIN = "pin"          # Klartext-PIN (Kind)
 ATTR_MINUTES = "minutes"  # Minuten
+ATTR_SCOPE = "scope"      # Reset-Umfang: all/today/week/month/year
 
 # --- Dispatcher-Signal (pro Config-Entry eindeutig) -------------------------
 SIGNAL_UPDATE = "medienstop_update_{entry_id}"

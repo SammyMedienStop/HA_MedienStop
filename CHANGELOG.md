@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0
+- **Neu:** Statistik zurücksetzen – per Knopf am jeweiligen Kind-Gerät, per
+  „Statistik ALLE zurücksetzen"-Knopf am Hub oder per Service
+  `medienstop.reset_statistics` (Kind wählbar oder alle; Umfang: alles / nur
+  Heute / Woche / Monat / Jahr).
+- **Fix:** Integrations-Icon wird jetzt angezeigt – die Brand-Bilder liegen nun im
+  Integrationsordner (`custom_components/medienstop/brand/`), wie es Home Assistant
+  ab 2026.3 für Custom-Integrationen unterstützt.
+
 ## 2.0.2
 - **Fix:** Bei Erreichen des Zeitfenster-Endes (z. B. 20 Uhr) wird jetzt korrekt
   das **„Zeitfenster-Ende / Schlafenszeit"-Video (limit)** gezeigt – vorher hat die
