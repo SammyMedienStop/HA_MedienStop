@@ -38,7 +38,7 @@ class WindowTime(MedienStopEntity, TimeEntity, RestoreEntity):
         self._bound = bound
         label, icon = _BOUNDS[bound]
         self._attr_icon = icon
-        self._attr_name = f"{_LABELS[daytype]} {label}"
+        self._attr_translation_key = f"{daytype}_{label.lower()}"
         self._attr_unique_id = f"{self._entry_id}_{pid}_{daytype}_{label.lower()}"
         self._attr_device_info = profile_device(
             self._entry_id, pid, manager.profiles[pid]["name"]
@@ -67,7 +67,7 @@ class WindowTime(MedienStopEntity, TimeEntity, RestoreEntity):
 class AutoOffTime(MedienStopEntity, TimeEntity, RestoreEntity):
     """Uhrzeit, zu der die Elternzeit automatisch abgeschaltet wird."""
 
-    _attr_name = "Elternzeit Auto-Aus Zeit"
+    _attr_translation_key = "parent_autooff_time"
     _attr_icon = "mdi:timer-off-outline"
 
     def __init__(self, manager) -> None:

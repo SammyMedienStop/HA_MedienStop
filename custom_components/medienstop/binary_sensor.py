@@ -27,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
 class TvActiveBinarySensor(MedienStopEntity, BinarySensorEntity):
     """An, wenn der ausgewählte Fernseher läuft."""
 
-    _attr_name = "Fernseher aktiv"
+    _attr_translation_key = "tv_active"
     _attr_device_class = BinarySensorDeviceClass.POWER
     _attr_icon = "mdi:television"
 

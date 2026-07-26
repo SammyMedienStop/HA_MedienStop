@@ -42,7 +42,7 @@ class MSSwitch(MedienStopEntity, SwitchEntity, RestoreEntity):
         super().__init__(manager)
         self._key = key
         self._restore = restore
-        self._attr_name = name
+        self._attr_translation_key = key
         self._attr_icon = icon
         self._attr_unique_id = f"{self._entry_id}_{key}"
         self._attr_device_info = hub_device(self._entry_id)

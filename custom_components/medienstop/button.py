@@ -47,7 +47,7 @@ _INSTRUCTIONS = (
 
 
 class GenerateDashboardButton(MedienStopEntity, ButtonEntity):
-    _attr_name = "Dashboard-Vorlage erstellen"
+    _attr_translation_key = "make_dashboard"
     _attr_icon = "mdi:view-dashboard-edit"
 
     def __init__(self, manager) -> None:
@@ -87,7 +87,7 @@ class DiagnoseButton(MedienStopEntity, ButtonEntity):
     """Zeigt als Benachrichtigung, warum der TV (nicht) abschaltet -
     und löst die Abschalt-Prüfung sofort aus."""
 
-    _attr_name = "Diagnose"
+    _attr_translation_key = "diagnose"
     _attr_icon = "mdi:stethoscope"
 
     def __init__(self, manager) -> None:
@@ -115,7 +115,7 @@ class DiagnoseButton(MedienStopEntity, ButtonEntity):
 class VideoTestButton(MedienStopEntity, ButtonEntity):
     """Spielt das Abschiedsvideo sofort ab (Test) - ohne auf Zeitablauf zu warten."""
 
-    _attr_name = "Video testen"
+    _attr_translation_key = "video_test"
     _attr_icon = "mdi:movie-open-play"
 
     def __init__(self, manager) -> None:
@@ -132,7 +132,7 @@ class VideoTestButton(MedienStopEntity, ButtonEntity):
 class ResetStatsAllButton(MedienStopEntity, ButtonEntity):
     """Setzt die Statistik (geschaute Zeit) ALLER Kinder zurück - am Hub."""
 
-    _attr_name = "Statistik ALLE zurücksetzen"
+    _attr_translation_key = "reset_stats_all"
     _attr_icon = "mdi:backup-restore"
 
     def __init__(self, manager) -> None:
@@ -147,7 +147,7 @@ class ResetStatsAllButton(MedienStopEntity, ButtonEntity):
 class ResetStatsChildButton(MedienStopEntity, ButtonEntity):
     """Setzt die Statistik (geschaute Zeit) EINES Kindes zurück - am Kind-Gerät."""
 
-    _attr_name = "Statistik zurücksetzen"
+    _attr_translation_key = "reset_stats"
     _attr_icon = "mdi:eye-refresh-outline"
 
     def __init__(self, manager, cid: str) -> None:

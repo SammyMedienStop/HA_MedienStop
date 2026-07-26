@@ -129,5 +129,61 @@
         "per_child": "Variant 2 – One dashboard per child (user sharing)"
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "remaining": {"name": "Remaining"},
+      "watched": {"name": "Watched today"},
+      "watched_week": {"name": "This week"},
+      "watched_month": {"name": "This month"},
+      "watched_year": {"name": "This year"},
+      "status": {"name": "Status"},
+      "parent_watched": {"name": "Parent time today"},
+      "parent_watched_week": {"name": "Parent time this week"},
+      "parent_watched_month": {"name": "Parent time this month"},
+      "parent_watched_year": {"name": "Parent time this year"},
+      "last_check": {"name": "Last check"}
+    },
+    "binary_sensor": {
+      "tv_active": {"name": "TV active"}
+    },
+    "switch": {
+      "system_active": {"name": "System active"},
+      "holiday": {"name": "Holiday today"},
+      "parent_override": {"name": "Parent time"},
+      "meal_pause": {"name": "Meal break"},
+      "parent_autooff_enabled": {"name": "Parent time auto-off"}
+    },
+    "number": {
+      "budget_werktag": {"name": "Budget weekday"},
+      "budget_wochenende": {"name": "Budget weekend"},
+      "budget_ferien": {"name": "Budget holidays"}
+    },
+    "time": {
+      "werktag_start": {"name": "Weekday start"},
+      "werktag_ende": {"name": "Weekday end"},
+      "wochenende_start": {"name": "Weekend start"},
+      "wochenende_ende": {"name": "Weekend end"},
+      "ferien_start": {"name": "Holiday start"},
+      "ferien_ende": {"name": "Holiday end"},
+      "parent_autooff_time": {"name": "Parent time auto-off time"}
+    },
+    "select": {
+      "profile": {"name": "Profile"}
+    },
+    "text": {
+      "pin": {"name": "PIN"},
+      "url_active": {"name": "Hook active"},
+      "url_inactive": {"name": "Hook inactive"},
+      "parent_url_active": {"name": "Parent mode hook active"},
+      "parent_url_inactive": {"name": "Parent mode hook inactive"}
+    },
+    "button": {
+      "make_dashboard": {"name": "Create dashboard template"},
+      "diagnose": {"name": "Diagnostics"},
+      "video_test": {"name": "Test video"},
+      "reset_stats_all": {"name": "Reset ALL statistics"},
+      "reset_stats": {"name": "Reset statistics"}
+    }
   }
 }

@@ -37,7 +37,7 @@ class BudgetNumber(MedienStopEntity, RestoreNumber):
         super().__init__(manager)
         self._pid = pid
         self._daytype = daytype
-        self._attr_name = f"Budget {_LABELS[daytype]}"
+        self._attr_translation_key = f"budget_{daytype}"
         self._attr_unique_id = f"{self._entry_id}_{pid}_budget_{daytype}"
         self._attr_device_info = profile_device(
             self._entry_id, pid, manager.profiles[pid]["name"]

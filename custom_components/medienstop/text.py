@@ -29,7 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
 
 
 class PinText(MedienStopEntity, TextEntity, RestoreEntity):
-    _attr_name = "PIN"
+    _attr_translation_key = "pin"
     _attr_icon = "mdi:form-textbox-password"
     _attr_native_min = 0
     _attr_native_max = 12
@@ -91,7 +91,7 @@ class ChildUrlText(_UrlBase):
         super().__init__(manager)
         self._cid = cid
         self._key = key
-        self._attr_name = name
+        self._attr_translation_key = key
         self._attr_unique_id = f"{self._entry_id}_{cid}_{key}"
         self._attr_device_info = child_device(self._entry_id, cid, manager.children[cid]["name"])
 
@@ -106,7 +106,7 @@ class ParentUrlText(_UrlBase):
     def __init__(self, manager, attr: str, name: str) -> None:
         super().__init__(manager)
         self._attr = attr
-        self._attr_name = name
+        self._attr_translation_key = attr
         self._attr_unique_id = f"{self._entry_id}_{attr}"
         self._attr_device_info = hub_device(self._entry_id)
 

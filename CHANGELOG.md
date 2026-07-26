@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.0
+- **Neu: Englischer Modus / English mode.** Die Integration folgt jetzt der
+  eingestellten Home-Assistant-Sprache **je Benutzer** (Profil → Sprache → English)
+  – kein separater Schalter nötig. Übersetzt sind der **Einrichtungs-Assistent** und
+  **alle Entitätsnamen** (Deutsch/Englisch). Jedes Familienmitglied kann so seine
+  eigene Sprache nutzen.
+- (Folgt in einem kleinen Update: Beschriftungen der Dashboard-Vorlage und der
+  Benachrichtigungen ebenfalls sprachabhängig.)
+
 ## 2.2.0
 - **Neu:** Elternzeit-Statistik – Minuten mit aktiver Elternzeit (Heute / Woche /
   Monat / Jahr) als eigene Sensoren am Hub, inkl. eigener Karte im Statistik-Tab.

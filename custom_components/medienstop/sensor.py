@@ -54,7 +54,7 @@ class _ChildBase(MedienStopEntity):
 class RemainingSensor(_ChildBase, RestoreSensor):
     """Verbleibende Minuten - ueberlebt einen Neustart (sonst Reset auf Standard)."""
 
-    _attr_name = "Restzeit"
+    _attr_translation_key = "remaining"
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:timer-outline"
@@ -89,7 +89,7 @@ class WatchedSensor(_ChildBase, RestoreSensor):
     def __init__(self, manager, cid: str, key: str, name: str, uid: str) -> None:
         super().__init__(manager, cid)
         self._key = key
-        self._attr_name = name
+        self._attr_translation_key = uid
         self._attr_unique_id = f"{self._entry_id}_{cid}_{uid}"
 
     @property
@@ -108,7 +108,7 @@ class WatchedSensor(_ChildBase, RestoreSensor):
 
 
 class StatusSensor(_ChildBase, SensorEntity):
-    _attr_name = "Status"
+    _attr_translation_key = "status"
     _attr_icon = "mdi:television-guide"
 
     def __init__(self, manager, cid: str) -> None:
@@ -147,7 +147,7 @@ class ParentWatchedSensor(MedienStopEntity, RestoreSensor):
     def __init__(self, manager, key: str, name: str) -> None:
         super().__init__(manager)
         self._key = key
-        self._attr_name = name
+        self._attr_translation_key = key
         self._attr_unique_id = f"{self._entry_id}_{key}"
         self._attr_device_info = hub_device(self._entry_id)
 
@@ -169,7 +169,7 @@ class ParentWatchedSensor(MedienStopEntity, RestoreSensor):
 class LastCheckSensor(MedienStopEntity, SensorEntity):
     """Zeitstempel der letzten Hintergrund-Prüfung (Heartbeat, ~alle 15s)."""
 
-    _attr_name = "Letzte Prüfung"
+    _attr_translation_key = "last_check"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:heart-pulse"
 

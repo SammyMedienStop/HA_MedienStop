@@ -129,5 +129,61 @@
         "per_child": "Variante 2 – Pro Kind ein Dashboard (Benutzerfreigabe)"
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "remaining": {"name": "Restzeit"},
+      "watched": {"name": "Heute geschaut"},
+      "watched_week": {"name": "Diese Woche"},
+      "watched_month": {"name": "Dieser Monat"},
+      "watched_year": {"name": "Dieses Jahr"},
+      "status": {"name": "Status"},
+      "parent_watched": {"name": "Elternzeit heute"},
+      "parent_watched_week": {"name": "Elternzeit Woche"},
+      "parent_watched_month": {"name": "Elternzeit Monat"},
+      "parent_watched_year": {"name": "Elternzeit Jahr"},
+      "last_check": {"name": "Letzte Prüfung"}
+    },
+    "binary_sensor": {
+      "tv_active": {"name": "Fernseher aktiv"}
+    },
+    "switch": {
+      "system_active": {"name": "System aktiv"},
+      "holiday": {"name": "Ferien heute"},
+      "parent_override": {"name": "Elternzeit"},
+      "meal_pause": {"name": "Essenspause"},
+      "parent_autooff_enabled": {"name": "Elternzeit Auto-Aus"}
+    },
+    "number": {
+      "budget_werktag": {"name": "Budget Werktag"},
+      "budget_wochenende": {"name": "Budget Wochenende"},
+      "budget_ferien": {"name": "Budget Ferien"}
+    },
+    "time": {
+      "werktag_start": {"name": "Werktag Start"},
+      "werktag_ende": {"name": "Werktag Ende"},
+      "wochenende_start": {"name": "Wochenende Start"},
+      "wochenende_ende": {"name": "Wochenende Ende"},
+      "ferien_start": {"name": "Ferien Start"},
+      "ferien_ende": {"name": "Ferien Ende"},
+      "parent_autooff_time": {"name": "Elternzeit Auto-Aus Zeit"}
+    },
+    "select": {
+      "profile": {"name": "Profil"}
+    },
+    "text": {
+      "pin": {"name": "PIN"},
+      "url_active": {"name": "Hook aktiv"},
+      "url_inactive": {"name": "Hook inaktiv"},
+      "parent_url_active": {"name": "Elternmodus Hook aktiv"},
+      "parent_url_inactive": {"name": "Elternmodus Hook inaktiv"}
+    },
+    "button": {
+      "make_dashboard": {"name": "Dashboard-Vorlage erstellen"},
+      "diagnose": {"name": "Diagnose"},
+      "video_test": {"name": "Video testen"},
+      "reset_stats_all": {"name": "Statistik ALLE zurücksetzen"},
+      "reset_stats": {"name": "Statistik zurücksetzen"}
+    }
   }
 }

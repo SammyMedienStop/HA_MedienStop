@@ -22,7 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
 
 
 class ProfileSelect(MedienStopEntity, SelectEntity, RestoreEntity):
-    _attr_name = "Profil"
+    _attr_translation_key = "profile"
     _attr_icon = "mdi:account-cog"
 
     def __init__(self, manager, cid: str) -> None:
