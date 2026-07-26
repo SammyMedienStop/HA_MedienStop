@@ -1,5 +1,11 @@
 # Changelog
 
+## Unveröffentlicht
+- **i18n:** Auch die **Service-Namen und -Beschreibungen** (inkl. Feldbeschriftungen)
+  folgen jetzt der Home-Assistant-Sprache – die `services`-Sektion in
+  `translations/de.json`, `translations/en.json` und `strings.json`. Kommt mit dem
+  nächsten gebündelten Release in HACS an.
+
 ## 2.3.1
 - **Neu:** Auch die **Dashboard-Vorlage** und die **Benachrichtigungen**
   (Dashboard-Erstellung, Diagnose, Video-Test) folgen jetzt der Home-Assistant-Sprache

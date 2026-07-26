@@ -185,5 +185,81 @@
       "reset_stats_all": {"name": "Reset ALL statistics"},
       "reset_stats": {"name": "Reset statistics"}
     }
+  },
+  "services": {
+    "start_timer": {
+      "name": "Start timer (Play)",
+      "description": "Starts/resumes a child's timer. Only possible if remaining time > 0 and within the allowed time window. PIN required if set for the child.",
+      "fields": {
+        "child": {"name": "Child", "description": "Child ID, e.g. kind_1"},
+        "pin": {"name": "PIN", "description": "The child's PIN (only if set)."}
+      }
+    },
+    "pause_timer": {
+      "name": "Pause timer (Pause)",
+      "description": "Pauses the running timer. The remaining time is kept.",
+      "fields": {
+        "child": {"name": "Child", "description": "Child ID, e.g. kind_1"}
+      }
+    },
+    "stop_timer": {
+      "name": "Stop timer (Stop)",
+      "description": "Sets the remaining time to 0. The child then has no time left for today and cannot start again.",
+      "fields": {
+        "child": {"name": "Child", "description": "Child ID, e.g. kind_1"}
+      }
+    },
+    "add_time": {
+      "name": "Grant time (parents)",
+      "description": "Adds minutes to ONE child or ALL children. Leave 'Child' empty or enter 'alle' = all children.",
+      "fields": {
+        "child": {"name": "Child", "description": "Child ID (e.g. kind_1). Empty or 'alle' = all children."},
+        "minutes": {"name": "Minutes", "description": "Minutes to add."}
+      }
+    },
+    "set_pin": {
+      "name": "Set/clear PIN (parents)",
+      "description": "Sets a child's PIN anew (leave empty to remove the PIN).",
+      "fields": {
+        "child": {"name": "Child", "description": "Child ID, e.g. kind_1"},
+        "pin": {"name": "New PIN", "description": "Leave empty to remove the PIN."}
+      }
+    },
+    "apply_budgets_now": {
+      "name": "Apply budgets now",
+      "description": "Immediately sets every child's remaining time to today's budget (otherwise this happens automatically at midnight)."
+    },
+    "create_dashboard": {
+      "name": "Create dashboard template",
+      "description": "Creates a ready-made dashboard template (parent + child view) as a copyable notification. Without input the configured number of children/profiles is used.",
+      "fields": {
+        "children": {"name": "Number of children", "description": "Optional - otherwise as configured."},
+        "profiles": {"name": "Number of profiles", "description": "Optional - otherwise as configured."}
+      }
+    },
+    "play_media": {
+      "name": "Stream video/image to the TV",
+      "description": "Plays a media URL (mp4, image, audio) on the media_player entity selected as the TV.",
+      "fields": {
+        "media": {"name": "Media file (pick)", "description": "Pick a file in the media browser."},
+        "url": {"name": "or media URL", "description": "Alternatively a direct URL/path (http/https or media-source://...)."},
+        "content_type": {"name": "Media type", "description": "Optional: video, image or music (otherwise automatic)."}
+      }
+    },
+    "test_video": {
+      "name": "Test video",
+      "description": "Plays one of the configured videos immediately for testing.",
+      "fields": {
+        "which": {"name": "Which video", "description": "timeup (goodbye), limit (window end) or notimer (notice)."}
+      }
+    },
+    "reset_statistics": {
+      "name": "Reset statistics",
+      "description": "Resets the watched time (statistics) - for ONE child or ALL. Leave 'Child' empty or enter 'alle' = all children.",
+      "fields": {
+        "child": {"name": "Child", "description": "Child ID (e.g. kind_1). Empty or 'alle' = all children."},
+        "scope": {"name": "Scope", "description": "Which periods to reset (default: all)."}
+      }
+    }
   }
 }
