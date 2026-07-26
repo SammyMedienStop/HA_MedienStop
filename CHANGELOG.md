@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.0
+- **Neu:** Elternzeit-Statistik – Minuten mit aktiver Elternzeit (Heute / Woche /
+  Monat / Jahr) als eigene Sensoren am Hub, inkl. eigener Karte im Statistik-Tab.
+- **Neu:** Balken-Diagramm „Fernsehzeit pro Tag" im Statistik-Tab (nutzt die
+  Home-Assistant-Langzeitstatistik; füllt sich über die Zeit).
+- Der Reset „Statistik ALLE zurücksetzen" schließt die Elternzeit-Statistik mit ein.
+
 ## 2.1.1
 - **Neu:** Reset-Knöpfe direkt im **Statistik-Tab** der Dashboard-Vorlage – je Kind
   und „Statistik ALLE zurücksetzen", jeweils mit **Sicherheitsabfrage**. Dashboard

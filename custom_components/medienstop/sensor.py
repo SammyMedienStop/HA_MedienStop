@@ -30,6 +30,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
         entities.append(WatchedSensor(manager, cid, "watched_month", "Dieser Monat", "watched_month"))
         entities.append(WatchedSensor(manager, cid, "watched_year", "Dieses Jahr", "watched_year"))
         entities.append(StatusSensor(manager, cid))
+    # Elternzeit-Statistik am Hub (Heute / Woche / Monat / Jahr)
+    for key, name in [
+        ("parent_watched", "Elternzeit heute"),
+        ("parent_watched_week", "Elternzeit Woche"),
+        ("parent_watched_month", "Elternzeit Monat"),
+        ("parent_watched_year", "Elternzeit Jahr"),
+    ]:
+        entities.append(ParentWatchedSensor(manager, key, name))
     entities.append(LastCheckSensor(manager))
     async_add_entities(entities)
 
@@ -127,6 +135,35 @@ class StatusSensor(_ChildBase, SensorEntity):
             "fenster_von": start.strftime("%H:%M"),
             "fenster_bis": end.strftime("%H:%M"),
         }
+
+
+class ParentWatchedSensor(MedienStopEntity, RestoreSensor):
+    """Minuten mit aktiver Elternzeit (Heute/Woche/Monat/Jahr) - am Hub; überlebt Neustart."""
+
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_icon = "mdi:account-supervisor"
+
+    def __init__(self, manager, key: str, name: str) -> None:
+        super().__init__(manager)
+        self._key = key
+        self._attr_name = name
+        self._attr_unique_id = f"{self._entry_id}_{key}"
+        self._attr_device_info = hub_device(self._entry_id)
+
+    @property
+    def native_value(self) -> int:
+        return int(getattr(self.manager, self._key, 0))
+
+    async def async_added_to_hass(self) -> None:
+        await RestoreSensor.async_added_to_hass(self)
+        last = await self.async_get_last_sensor_data()
+        if last is not None and last.native_value is not None:
+            try:
+                setattr(self.manager, self._key, int(last.native_value))
+            except (ValueError, TypeError):
+                pass
+        self._subscribe_updates()
 
 
 class LastCheckSensor(MedienStopEntity, SensorEntity):

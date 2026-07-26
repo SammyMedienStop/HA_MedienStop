@@ -109,6 +109,11 @@ class MedienStopManager:
         self.system_active: bool = True    # Gesamtsystem aktiv? (Loop läuft nur dann)
         self.holiday: bool = False         # "Heute ist Ferienzeit"
         self.parent_override: bool = False # Elternzeit: TV trotz allem erlaubt
+        # Elternzeit-Statistik: Minuten, in denen Elternzeit aktiv war UND der TV lief.
+        self.parent_watched = 0        # heute
+        self.parent_watched_week = 0   # diese Woche
+        self.parent_watched_month = 0  # dieser Monat
+        self.parent_watched_year = 0   # dieses Jahr
         self.meal_pause: bool = False      # "Jetzt wird gegessen": Hart-Aus
         self.last_check = None             # Zeitstempel der letzten Hintergrund-Prüfung
         # Elternzeit-Auto-Aus: schaltet die Elternzeit täglich zur Uhrzeit ab.
@@ -389,6 +394,17 @@ class MedienStopManager:
         for c in targets:
             for k in keys:
                 self.children[c][k] = 0
+        # "Alle" schließt die Elternzeit-Statistik mit ein.
+        if cid in (None, "", "all", "alle"):
+            pkeys = {
+                "today": ["parent_watched"],
+                "week": ["parent_watched_week"],
+                "month": ["parent_watched_month"],
+                "year": ["parent_watched_year"],
+            }.get(scope, ["parent_watched", "parent_watched_week",
+                          "parent_watched_month", "parent_watched_year"])
+            for k in pkeys:
+                setattr(self, k, 0)
         _LOGGER.info("Statistik zurückgesetzt (%s) für: %s", scope, targets)
         self._notify()
 
@@ -494,6 +510,13 @@ class MedienStopManager:
 
         daytype = self.current_daytype()
         authorized, reason = self._scan(daytype, decrement=True)
+
+        # Elternzeit-Statistik: pro Minute zählen, solange Elternzeit aktiv ist und der TV läuft.
+        if self.parent_override and self._tv_is_on():
+            self.parent_watched += 1
+            self.parent_watched_week += 1
+            self.parent_watched_month += 1
+            self.parent_watched_year += 1
 
         if self._tv_is_on() and not authorized:
             self._goodbye_then_off(reason or "notimer")
@@ -739,6 +762,14 @@ class MedienStopManager:
                 child["watched_month"] = 0
             if new_year:
                 child["watched_year"] = 0
+        # Elternzeit-Statistik analog zurücksetzen.
+        self.parent_watched = 0
+        if new_week:
+            self.parent_watched_week = 0
+        if new_month:
+            self.parent_watched_month = 0
+        if new_year:
+            self.parent_watched_year = 0
         self.last_reset = today
         self.apply_budgets_now()
 

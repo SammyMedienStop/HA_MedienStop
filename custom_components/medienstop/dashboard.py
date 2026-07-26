@@ -28,6 +28,10 @@ _HUB_DEFAULTS = {
     "parent_autooff_time": "time.medienstop_elternzeit_auto_aus_zeit",
     "parent_url_active": "text.medienstop_de_elternmodus_hook_aktiv",
     "parent_url_inactive": "text.medienstop_de_elternmodus_hook_inaktiv",
+    "parent_watched": "sensor.medienstop_de_elternzeit_heute",
+    "parent_watched_week": "sensor.medienstop_de_elternzeit_woche",
+    "parent_watched_month": "sensor.medienstop_de_elternzeit_monat",
+    "parent_watched_year": "sensor.medienstop_de_elternzeit_jahr",
 }
 
 
@@ -220,6 +224,21 @@ def build_dashboard(num_children: int, num_profiles: int,
             },
         }
         stat_cards.append({"type": "vertical-stack", "cards": [ents, reset_btn]})
+    # Elternzeit-Statistik (am Hub gezählt)
+    stat_cards.append({"type": "entities", "title": "Elternzeit", "entities": [
+        {"entity": E("parent_watched"), "name": "Heute"},
+        {"entity": E("parent_watched_week"), "name": "Diese Woche"},
+        {"entity": E("parent_watched_month"), "name": "Dieser Monat"},
+        {"entity": E("parent_watched_year"), "name": "Dieses Jahr"},
+    ]})
+    # Diagramm: Fernsehzeit pro Tag (Balken) je Kind + Elternzeit (nutzt HA-Langzeitstatistik).
+    graph_entities = [E(f"kind_{n}_watched") for n in range(1, num_children + 1)]
+    graph_entities.append(E("parent_watched"))
+    stat_cards.append({
+        "type": "statistics-graph", "title": "Fernsehzeit pro Tag (Minuten)",
+        "chart_type": "bar", "period": "day", "days_to_show": 30,
+        "stat_types": ["change"], "entities": graph_entities,
+    })
     views.append({"title": "Statistik", "path": "statistik",
                   "icon": "mdi:chart-bar", "cards": stat_cards})
 
