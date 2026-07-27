@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.3
+- **Fix:** Am gemeinsamen Fernseher kann jetzt wirklich nur **ein Kind gleichzeitig**
+  schauen. Solange ein Kind läuft, zeigen die anderen **„belegt"** an und der
+  **Play-/Fortsetzen-Knopf verschwindet** aus ihrem Kind-Dashboard (vorher blieb er
+  bei pausierten Kindern sichtbar, obwohl der Start ohnehin blockiert war). Sobald der
+  Fernseher frei ist, können pausierte Kinder wie gewohnt fortsetzen.
+- Kein Neu-Erzeugen des Dashboards nötig – der Fix wirkt nach dem Update sofort.
+
 ## 2.3.2
 - **Verbessert:** Die **Reset-Knöpfe im Statistik-Tab** sind jetzt kompakte
   Pillen-Buttons im Karten-Footer (Stil wie „+15/+30/Stop") statt großer Kacheln –

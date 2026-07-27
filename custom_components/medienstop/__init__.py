@@ -214,13 +214,16 @@ class MedienStopManager:
             return STATUS_BLOCKED  # während Essenspause alles gesperrt
         if child["remaining"] <= 0:
             return STATUS_IDLE
-        if child["state"] == STATE_PAUSED:
-            return STATUS_PAUSED
         if child["state"] == STATE_RUNNING:
             return STATUS_RUNNING if self.within_window(cid) else STATUS_BLOCKED
-        # hat Zeit, läuft aber nicht: belegt, wenn anderes Kind oder Elternzeit aktiv
+        # TV ist von einem ANDEREN Kind oder von der Elternzeit belegt -> dieses
+        # Kind kann jetzt NICHT schauen (auch nicht fortsetzen), daher "belegt".
+        # Dadurch blendet das Kind-Dashboard den Play-/Fortsetzen-Knopf aus, solange
+        # ein anderes Kind läuft (nur EIN Kind gleichzeitig am gemeinsamen Fernseher).
         if self.parent_override or self.another_active(cid):
             return STATUS_BUSY
+        if child["state"] == STATE_PAUSED:
+            return STATUS_PAUSED
         return STATUS_READY
 
     def another_active(self, cid: str) -> bool:
