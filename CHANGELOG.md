@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.4.0
+- **Neu: Text-Ansage statt Video/Audio-Datei** (z. B. für Alexa/Echo-Lautsprecher).
+  Unter *Konfigurieren → Videos* gibt es je Grund (Zeit/Budget abgelaufen,
+  Zeitfenster-Ende, kein Timer) jetzt zusätzlich ein Feld „…oder Text-Ansage" –
+  der eingetragene Text wird direkt über Amazons Sprachausgabe vorgelesen, es muss
+  keine Audio-/Videodatei mehr gehostet/ausgewählt werden. Dafür wird die separate
+  (HACS-)Integration **Alexa Media Player** benötigt; ist sie installiert, reicht es,
+  im „Video-Player"-Feld die Alexa-Geräte-Entity auszuwählen. Ist eine Text-Ansage
+  gesetzt, hat sie Vorrang vor einem eingestellten Video/einer URL für denselben
+  Grund. Der bestehende Media-Browser zeigt bei Alexa-Geräten weiterhin „Mediaplayer
+  unterstützt kein Auswählen aus Medienquellen" – das ist eine Einschränkung der
+  Alexa-Integration selbst (kein `browse_media`), keine Einschränkung von
+  MedienStop.de.
+
 ## 2.3.3
 - **Fix:** Am gemeinsamen Fernseher kann jetzt wirklich nur **ein Kind gleichzeitig**
   schauen. Solange ein Kind läuft, zeigen die anderen **„belegt"** an und der

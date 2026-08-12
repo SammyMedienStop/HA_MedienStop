@@ -161,6 +161,8 @@ def _videos_schema(videos: dict) -> vol.Schema:
         fields[vol.Optional(f"media_{key}")] = _media_selector()
         url_pre = cur.get("id") if cur.get("id") and not str(cur.get("id")).startswith("media-source") else None
         fields[vol.Optional(f"url_{key}", description={"suggested_value": url_pre})] = selector.TextSelector()
+        fields[vol.Optional(f"tts_{key}",
+                            description={"suggested_value": cur.get("tts")})] = selector.TextSelector()
         fields[vol.Optional(f"delay_{key}", default=int(cur.get("delay", 10) or 10))] = _delay_selector()
     return vol.Schema(fields)
 
@@ -170,14 +172,24 @@ def _collect_videos(user_input: dict, existing: dict) -> dict:
     for key, _label in _VIDEO_KEYS:
         media = user_input.get(f"media_{key}")
         url = user_input.get(f"url_{key}")
+        tts = (user_input.get(f"tts_{key}") or "").strip()
         delay = int(user_input.get(f"delay_{key}", 10) or 10)
+        cur = existing.get(key, {}) or {}
+        entry: dict = {}
         if media:
-            out[key] = {"id": media.get("media_content_id"),
-                        "type": media.get("media_content_type"), "delay": delay}
+            entry["id"] = media.get("media_content_id")
+            entry["type"] = media.get("media_content_type")
         elif url:
-            out[key] = {"id": url, "type": None, "delay": delay}
-        elif (existing.get(key, {}) or {}).get("id"):
-            keep = dict(existing[key]); keep["delay"] = delay; out[key] = keep
+            entry["id"] = url
+            entry["type"] = None
+        elif cur.get("id"):
+            entry["id"] = cur["id"]
+            entry["type"] = cur.get("type")
+        if tts:
+            entry["tts"] = tts
+        if entry:
+            entry["delay"] = delay
+            out[key] = entry
     return out
 
 

@@ -107,16 +107,19 @@
       },
       "videos": {
         "title": "MedienStop.de – Videos",
-        "description": "Optional: video/image before turning off – pick in media browser or enter URL. Empty = off immediately.",
+        "description": "Optional: video/image before turning off – pick in media browser, enter a URL, or use a spoken text announcement (e.g. read aloud on an Alexa/Echo speaker, requires the \"Alexa Media Player\" integration). Empty = off immediately.",
         "data": {
           "media_timeup": "Video time/budget over (pick)",
           "url_timeup": "…or URL (time/budget over)",
+          "tts_timeup": "…or spoken announcement (time/budget over, e.g. Alexa/Echo)",
           "delay_timeup": "Delay time/budget over (s)",
           "media_limit": "Video window end (pick)",
           "url_limit": "…or URL (window end)",
+          "tts_limit": "…or spoken announcement (window end, e.g. Alexa/Echo)",
           "delay_limit": "Delay window end (s)",
           "media_notimer": "Video no timer (pick)",
           "url_notimer": "…or URL (no timer)",
+          "tts_notimer": "…or spoken announcement (no timer, e.g. Alexa/Echo)",
           "delay_notimer": "Delay no timer (s)"
         }
       }

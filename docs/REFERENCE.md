@@ -16,7 +16,11 @@
 ## Config-Keys (entry.data)
 `num_children (1-9)`, `num_profiles (1-5)`, `tv_entity`, `video_player`,
 `kid_dashboard`, `names {kind_n/profil_n: Name}`, `tab_users {kind_n: user_id}`,
-`admin_users [user_id]`, `videos {timeup/limit/notimer: {id, type, delay}}`.
+`admin_users [user_id]`, `videos {timeup/limit/notimer: {id, type, delay, tts?}}`.
+`tts` (optional, freier Text) ist die Alternative zu `id`/`type`: eine Text-Ansage
+statt Video/Audio-Datei (z. B. für Alexa/Echo via `notify.alexa_media`, siehe
+`docs/ARCHITECTURE.md`). Ist `tts` gesetzt, hat sie beim Abschalten Vorrang vor
+`id`.
 
 ## Entities & entity_id-Muster
 Hub-Gerät „MedienStop.de" (Anzeigename; interner Slug „medienstop" bei

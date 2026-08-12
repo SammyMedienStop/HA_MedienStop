@@ -128,11 +128,12 @@ class MedienStopManager:
 
         def _v(key):
             d = _vids.get(key, {}) or {}
-            return d.get("id", ""), (d.get("type") or None), int(d.get("delay", 10) or 10)
+            return (d.get("id", ""), (d.get("type") or None), int(d.get("delay", 10) or 10),
+                    (d.get("tts") or ""))
 
-        self.video_timeup, self.video_timeup_type, self.delay_timeup = _v("timeup")
-        self.video_limit, self.video_limit_type, self.delay_limit = _v("limit")
-        self.video_notimer, self.video_notimer_type, self.delay_notimer = _v("notimer")
+        self.video_timeup, self.video_timeup_type, self.delay_timeup, self.tts_timeup = _v("timeup")
+        self.video_limit, self.video_limit_type, self.delay_limit, self.tts_limit = _v("limit")
+        self.video_notimer, self.video_notimer_type, self.delay_notimer, self.tts_notimer = _v("notimer")
         self._off_pending = False
         self._unsub_off = None
 
@@ -571,6 +572,50 @@ class MedienStopManager:
                             "Ist das die richtige (media_player-)Entitaet und das Geraet an?"),
                 "notification_id": "medienstop_video_err"}, blocking=False)
 
+    def _speak(self, text: str) -> None:
+        """Liest einen Text auf dem Streaming-Ziel vor (Alternative zu Video/Audio-Datei,
+        v.a. fuer Alexa/Echo-Lautsprecher, die keine eigene Mediendatei abspielen koennen)."""
+        target = self.media_target()
+        if not text or not target:
+            return
+        if not target.startswith("media_player."):
+            _LOGGER.warning("Ansage benoetigt eine media_player-Entity (aktuell %s)", target)
+            return
+        self.hass.async_create_task(self._async_speak(text))
+
+    async def _async_speak(self, text: str) -> None:
+        # Nutzt den notify-Service der "Alexa Media Player"-Integration (HACS), der
+        # Text direkt ueber Amazons eigene Sprachausgabe vorliest - dafuer wird KEIN
+        # gehostetes Audio/Video benoetigt (im Gegensatz zu _play_media). Funktioniert
+        # NUR, wenn diese fremde Integration installiert ist und den Service anbietet.
+        target = self.media_target()
+        if not self.hass.services.has_service("notify", "alexa_media"):
+            _LOGGER.warning("Ansage auf %s fehlgeschlagen: notify.alexa_media nicht verfuegbar", target)
+            await self.hass.services.async_call("persistent_notification", "create", {
+                "title": "MedienStop.de – Ansage",
+                "message": (f"Text-Ansage auf **{target}** nicht moeglich: der Service "
+                            "`notify.alexa_media` existiert nicht.\n\n"
+                            "Ist die (HACS-)Integration **Alexa Media Player** installiert und "
+                            "eingerichtet? Ohne sie kann MedienStop.de keine Sprachansage auf "
+                            "einem Alexa/Echo-Geraet abspielen."),
+                "notification_id": "medienstop_tts_err"}, blocking=False)
+            return
+        _LOGGER.info("MedienStop.de Ansage -> Ziel=%s, text=%s", target, text)
+        try:
+            await self.hass.services.async_call(
+                "notify", "alexa_media",
+                {"message": text, "target": target, "data": {"type": "announce"}},
+                blocking=True,
+            )
+        except Exception as err:  # pragma: no cover
+            _LOGGER.error("Ansage auf %s fehlgeschlagen: %s", target, err)
+            await self.hass.services.async_call("persistent_notification", "create", {
+                "title": "MedienStop.de – Ansage",
+                "message": (f"Text-Ansage auf **{target}** fehlgeschlagen:\n{err}\n\n"
+                            "Ist 'Communications' fuer dieses Geraet in der Alexa-App aktiviert? "
+                            "Das wird fuer Ansagen (announce) benoetigt."),
+                "notification_id": "medienstop_tts_err"}, blocking=False)
+
     def _goodbye_then_off(self, reason: str) -> None:
         """Spielt das passende Video und schaltet den TV nach Verzoegerung aus."""
         if self._off_pending:
@@ -580,23 +625,35 @@ class MedienStopManager:
                "notimer": self.video_notimer}.get(reason, "")
         ctype = {"timeup": self.video_timeup_type, "limit": self.video_limit_type,
                  "notimer": self.video_notimer_type}.get(reason)
+        text = {"timeup": self.tts_timeup, "limit": self.tts_limit,
+                "notimer": self.tts_notimer}.get(reason, "")
         self._off_pending = True
         delays = {"timeup": self.delay_timeup, "limit": self.delay_limit,
                   "notimer": self.delay_notimer}
-        if url:
+        if text:
+            # Text-Ansage (z.B. Alexa/Echo) hat Vorrang vor Video/Audio-Datei.
+            self._speak(text)
+            delay = max(0, int(delays.get(reason, 10)))
+        elif url:
             self._play_media(url, ctype)
             delay = max(0, int(delays.get(reason, 10)))
         else:
-            delay = 0  # kein Video -> sofort aus (wie bisher)
-        _LOGGER.warning("Abschalt-Sequenz (%s): Video=%s, aus in %ss", reason, bool(url), delay)
+            delay = 0  # keine Ansage/kein Video -> sofort aus (wie bisher)
+        _LOGGER.warning("Abschalt-Sequenz (%s): Ansage=%s, Video=%s, aus in %ss",
+                        reason, bool(text), bool(url), delay)
         self._unsub_off = async_call_later(self.hass, delay, self._do_off)
 
     def test_video(self, which: str = "timeup") -> bool:
-        """Spielt das konfigurierte Video sofort ab (zum Testen). True = gespielt."""
+        """Spielt die konfigurierte Ansage/Video sofort ab (zum Testen). True = gespielt."""
         url = {"timeup": self.video_timeup, "limit": self.video_limit,
                "notimer": self.video_notimer}.get(which, "")
         ctype = {"timeup": self.video_timeup_type, "limit": self.video_limit_type,
                  "notimer": self.video_notimer_type}.get(which)
+        text = {"timeup": self.tts_timeup, "limit": self.tts_limit,
+                "notimer": self.tts_notimer}.get(which, "")
+        if text:
+            self._speak(text)
+            return True
         if url:
             self._play_media(url, ctype)
             return True
@@ -995,19 +1052,32 @@ def _async_register_services(hass: HomeAssistant) -> None:
         for mgr in _managers(hass):
             url = {"timeup": mgr.video_timeup, "limit": mgr.video_limit,
                    "notimer": mgr.video_notimer}.get(which, "")
+            text = {"timeup": mgr.tts_timeup, "limit": mgr.tts_limit,
+                    "notimer": mgr.tts_notimer}.get(which, "")
             tgt = mgr.media_target()
-            if not url:
-                msg = (f"No video is set for '{which}'. Please pick one under "
-                       "Configure -> Videos."
+            if not url and not text:
+                msg = (f"No video/announcement is set for '{which}'. Please set one "
+                       "under Configure -> Videos."
                        if en else
-                       f"Fuer '{which}' ist kein Video gesetzt. Bitte unter "
-                       "Konfigurieren -> Videos auswaehlen.")
+                       f"Fuer '{which}' ist weder Video noch Text-Ansage gesetzt. Bitte "
+                       "unter Konfigurieren -> Videos auswaehlen.")
             elif not (tgt or "").startswith("media_player."):
                 msg = (f"The streaming target **{tgt}** is not a media_player. Please "
                        "choose a video player (media_player) under Configure."
                        if en else
                        f"Das Streaming-Ziel **{tgt}** ist kein media_player. "
                        "Bitte unter Konfigurieren einen Video-Player (media_player) waehlen.")
+            elif text:
+                mgr.test_video(which)
+                msg = (f"Sending announcement to **{tgt}**:\n{text}\n\n"
+                       "Nothing audible? This target needs the (HACS) **Alexa Media "
+                       "Player** integration and 'Communications' enabled for this "
+                       "device in the Alexa app."
+                       if en else
+                       f"Sende Ansage an **{tgt}**:\n{text}\n\n"
+                       "Nichts zu hoeren? Dieses Ziel benoetigt die (HACS-)Integration "
+                       "**Alexa Media Player** und 'Communications' fuer dieses Geraet "
+                       "in der Alexa-App aktiviert.")
             else:
                 mgr.test_video(which)
                 msg = (f"Sending video to **{tgt}**:\n{url}\n\n"

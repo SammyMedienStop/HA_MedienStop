@@ -195,6 +195,32 @@ auch einen reinen **Lautsprecher** als „Video-Player" eintragen.
 > „Video-Player". Für reine **Audio**-Ansagen kannst du auch einen Lautsprecher als
 > Ziel nehmen.
 
+## 🗣️ Alternative: Text-Ansage über Alexa/Echo
+
+Statt einer Video-/Audiodatei kann jede der drei Ansagen auch als **gesprochener
+Text** ausgegeben werden – ideal für einen **Alexa/Echo-Lautsprecher** als
+Video-Player, da der nicht ohne Weiteres eigene Mediendateien abspielen kann.
+
+1. **Voraussetzung:** Die (kostenlose, per HACS installierbare) Integration
+   **[Alexa Media Player](https://github.com/alandtse/alexa_media_player)** muss
+   eingerichtet sein und deinen Echo als `media_player`-Entity bereitstellen.
+2. Diese Entity unter *MedienStop.de → Konfigurieren* als **„Video-Player"**
+   auswählen (genau wie einen Chromecast).
+3. Unter *MedienStop.de → Konfigurieren → Videos* im Feld **„…oder Text-Ansage"**
+   den gewünschten Satz eintragen (z. B. „Deine Zeit ist um, mach den Fernseher
+   aus."). Ist ein Text eingetragen, wird er beim Abschalten **statt** eines
+   eventuell zusätzlich gesetzten Videos vorgelesen.
+4. Für Ansagen muss in der Alexa-App bei diesem Gerät **„Communications"**
+   aktiviert sein – sonst bleibt der Lautsprecher stumm, ohne Fehlermeldung in
+   Home Assistant.
+
+> [!NOTE]
+> Öffnest du den **Media-Browser** im Video-Feld für ein Alexa-Gerät, meldet
+> Home Assistant „Mediaplayer unterstützt kein Auswählen aus Medienquellen" – das
+> ist eine Einschränkung der Alexa-Integration selbst (sie kann keine Dateien
+> durchsuchen), keine Einschränkung von MedienStop.de. Für Alexa/Echo einfach die
+> **Text-Ansage** statt des Media-Browsers nutzen.
+
 ## 🩺 Fehlersuche
 
 - **Diagnose-Knopf** am Hub → Benachrichtigung mit komplettem Zustand.

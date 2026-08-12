@@ -48,10 +48,23 @@ DIESELBE Logik. `reason ∈ {"timeup","limit",None}`, sonst `None` → „notime
 `parent_override` (Elternzeit) setzt `authorized=True` unabhängig davon.
 
 ## Abschalt-Sequenz `_goodbye_then_off(reason)`
-Wählt `video_<reason>` + `delay_<reason>`, spielt Video via `_play_media`,
-plant TV-Aus nach `delay` s (`async_call_later` → `_do_off`). Guard `_off_pending`
-verhindert Wiederholung. `_cancel_off()` bricht ab (z. B. wenn wieder berechtigt
-oder Start). Ist keine URL gesetzt → sofort aus (delay 0).
+Wählt `video_<reason>`/`tts_<reason>` + `delay_<reason>`. Ist `tts_<reason>` gesetzt
+(Text-Ansage), hat sie **Vorrang** und wird per `_speak()` ausgegeben; sonst wird bei
+gesetzter URL `_play_media()` genutzt. Danach TV-Aus nach `delay` s
+(`async_call_later` → `_do_off`). Guard `_off_pending` verhindert Wiederholung.
+`_cancel_off()` bricht ab (z. B. wenn wieder berechtigt oder Start). Ist weder Text
+noch URL gesetzt → sofort aus (delay 0).
+
+## Text-Ansage `_speak(text)` / `_async_speak(text)`
+Alternative zu Video/Audio-Datei, v. a. für **Alexa/Echo-Lautsprecher**: ruft den
+`notify.alexa_media`-Service der (separaten, per HACS installierten) Integration
+**Alexa Media Player** auf (`data.type="announce"`), sodass Amazons eigene
+Sprachausgabe den Text direkt vorliest – es muss dafür keine Mediendatei gehostet
+werden. Existiert der Service nicht (Integration fehlt/nicht eingerichtet) oder
+schlägt der Aufruf fehl (z. B. „Communications" für das Gerät in der Alexa-App nicht
+aktiviert), gibt es eine `persistent_notification` mit Fehlerhinweis, analog zu
+`_play_media`. Zielentity ist wie bei `_play_media` immer `media_target()` – dieselbe
+Entity kann also entweder für Video/URL oder für Text-Ansagen konfiguriert werden.
 
 ## Tagtyp (`current_daytype`) — „Schulnacht"-Logik
 `holiday` → `ferien`. Sonst: `weekday() in (4,5)` (Fr, Sa) → `wochenende`, sonst

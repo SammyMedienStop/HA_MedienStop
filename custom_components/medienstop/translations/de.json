@@ -107,16 +107,19 @@
       },
       "videos": {
         "title": "MedienStop.de – Videos",
-        "description": "Optional: Video/Bild vor dem Ausschalten – im Media-Browser auswählen oder URL angeben. Leer = sofort aus.",
+        "description": "Optional: Video/Bild vor dem Ausschalten – im Media-Browser auswählen, URL angeben oder als Text-Ansage (z. B. auf einem Alexa/Echo-Lautsprecher vorlesen lassen, dafür ist die Integration „Alexa Media Player“ nötig). Leer = sofort aus.",
         "data": {
           "media_timeup": "Video Zeit/Budget abgelaufen (auswählen)",
           "url_timeup": "…oder URL (Zeit/Budget abgelaufen)",
+          "tts_timeup": "…oder Text-Ansage (Zeit/Budget abgelaufen, z. B. Alexa/Echo)",
           "delay_timeup": "Verzögerung Zeit/Budget abgelaufen (Sek.)",
           "media_limit": "Video Zeitfenster-Ende (auswählen)",
           "url_limit": "…oder URL (Zeitfenster-Ende)",
+          "tts_limit": "…oder Text-Ansage (Zeitfenster-Ende, z. B. Alexa/Echo)",
           "delay_limit": "Verzögerung Zeitfenster-Ende (Sek.)",
           "media_notimer": "Video kein Timer (auswählen)",
           "url_notimer": "…oder URL (kein Timer)",
+          "tts_notimer": "…oder Text-Ansage (kein Timer, z. B. Alexa/Echo)",
           "delay_notimer": "Verzögerung kein Timer (Sek.)"
         }
       }
