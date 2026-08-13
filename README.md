@@ -7,7 +7,7 @@
 
 [![Home Assistant][ha-badge]][ha] [![HACS][hacs-badge]][hacs] [![Release][release-badge]][releases] [![License: MIT][mit-badge]][mit] [![Website][web-badge]][website] [![Spenden][donate-badge]][donate]
 
-[Website](https://medienstop.de) · [Installation](#-installation) · [Einrichtung](#-einrichtung) · [Dashboard](#-dashboard-einrichten) · [Videos](#-abschalt-videos) · [Audio](#-audio-ansagen-zum-download) · [Fehlersuche](#-fehlersuche) · [❤️ Spenden][donate]
+[Website](https://medienstop.de) · [Installation](#-installation) · [Einrichtung](#-einrichtung) · [Dashboard](#-dashboard-einrichten) · [Ansagen](#-abschalt-ansagen) · [Alexa/Echo](#️-ansagen-über-alexaecho) · [Hooks](#-hooks-für-eigene-automatisierungen) · [Fehlersuche](#-fehlersuche) · [❤️ Spenden][donate]
 
 </div>
 
@@ -57,7 +57,8 @@ MedienStop-Idee.
 - **Statistik** je Kind: heute / Woche / Monat / Jahr geschaut.
 - **Statistik zurücksetzen** – pro Kind oder für alle (Knopf am Gerät/Hub oder
   Service `medienstop.reset_statistics`).
-- **Webhooks** je Kind und für den Elternmodus – für eigene Automatisierungen.
+- **Webhooks (Hooks)** je Kind und für den Elternmodus – für eigene Automatisierungen
+  (siehe [Hooks](#-hooks-für-eigene-automatisierungen)).
 - **Tab-Sichtbarkeit je Benutzer** (Kinder sehen nur ihren Tab), update-fest.
 - **Dashboard-Generator** auf Knopfdruck + **Diagnose-Tools**.
 
@@ -112,8 +113,9 @@ Der Assistent fragt dich Schritt für Schritt:
    Kinder-Tab sieht.
 4. **Dashboard-Variante**.
 
-Videos und Audio wählst du danach unter *MedienStop.de → **Konfigurieren** → Videos*
-(siehe [Videos](#-abschalt-videos) und [Audio](#-audio-ansagen-zum-download)).
+Die Ansagen vor dem Ausschalten wählst du danach unter *MedienStop.de →
+**Konfigurieren*** – dort gibt es je einen Menüpunkt pro Fall
+(siehe [Abschalt-Ansagen](#-abschalt-ansagen)).
 
 ## 🖥️ Dashboard einrichten
 
@@ -146,48 +148,57 @@ von Hand bauen. So geht's, auch für Einsteiger:
 > Wer welchen Tab sieht, steckt bereits in der Vorlage – das hast du im
 > Einrichtungs-Assistenten unter **Sichtbarkeit** festgelegt.
 
-## 🎬 Abschalt-Videos
+## 🎬 Abschalt-Ansagen
 
-Kurz vor dem Ausschalten wird eine Ansage abgespielt. Es gibt drei Fälle:
+Kurz vor dem Ausschalten wird eine Ansage abgespielt. Es gibt drei Fälle, jeweils
+mit eigener Quelle und eigener Verzögerung:
 
-| Fall | Wann | Datei (Beispiel) |
+| Fall | Wann | Mitgelieferte Vorlage |
 |---|---|---|
-| **Zeit abgelaufen** | Tages-Guthaben aufgebraucht | `timeup_*.mp4` |
-| **Schlafenszeit** | erlaubte Endzeit erreicht (z. B. 20 Uhr) | `limit_*.mp4` |
-| **Keine TV-Zeit** | TV außerhalb der Zeit / ohne Timer gestartet | `notimer_*.mp4` |
+| **Zeit abgelaufen** | Tages-Guthaben aufgebraucht | „Fernsehzeit vorbei" |
+| **Schlafenszeit** | erlaubte Endzeit erreicht (z. B. 20 Uhr) | „Schlaft gut" |
+| **Keine TV-Zeit** | TV außerhalb der Zeit / ohne Timer gestartet | „Keine TV-Zeit" |
 
-### 📥 So fügst du die Medien hinzu
+### ✅ Einfachster Weg: mitgelieferte Ansage auswählen
 
-1. **Herunterladen:** Fertige Dateien hängen am [neuesten Release][releases]:
-   **Videos** = `medienstop-media.zip`, **Audio** = `medienstop-audio.zip`.
-   Entpacke das ZIP auf deinem Computer.
-2. **In den Medien-Ordner legen:** Kopiere die Dateien in den Ordner **`media`** deiner
-   Home-Assistant-Konfiguration (also `…/config/media/`). Gibt es den Ordner noch
-   nicht, lege ihn an. *(Zugriff z. B. über das Samba-/Dateizugriff-Add-on.)*
-3. **Auswählen:** In *MedienStop.de → **Konfigurieren** → Videos* öffnest du je Fall
-   den **Media-Browser** und wählst die Datei unter **„Meine Medien"** aus. Für jede
-   Ansage kannst du eine eigene **Abschalt-Verzögerung** einstellen.
-4. **Testen:** Mit der Aktion `medienstop.test_video` (Entwicklerwerkzeuge → Aktionen)
-   spielst du eine Ansage sofort ab.
+Seit Version 2.5.0 musst du **nichts mehr herunterladen und nichts kopieren**:
 
-## 🎧 Audio-Ansagen zum Download
+1. *Einstellungen → Geräte & Dienste → **MedienStop.de** → **Konfigurieren***.
+2. Den Punkt für den gewünschten Fall wählen, z. B. **„Ansage: Zeit/Budget
+   abgelaufen"**.
+3. Unter **„Quelle der Ansage"** eine der fertigen Vorlagen auswählen:
+   * **Vorlage · Video** – für Fernseher, Chromecast und DLNA.
+   * **Vorlage · Audio** – zusätzlich für **Alexa/Echo** geeignet.
+4. Häkchen bei **„Jetzt testen – noch nicht speichern"** setzen und absenden: Die
+   Ansage wird sofort abgespielt, **ohne** etwas zu speichern. Passt sie, das Häkchen
+   entfernen und erneut absenden – erst dann wird gespeichert.
 
-> [!TIP]
-> **Lieber nur Ton statt Video?** Es gibt alle drei Ansagen auch als **Audio-Dateien
-> (MP3)** zum Download: **`medienstop-audio.zip`** am [neuesten Release][releases].
-> Ideal, wenn dein Fernseher keine Videos direkt abspielt – oder wenn du die Ansage
-> lieber über einen **Lautsprecher** (z. B. Google Nest / Chromecast) ausgeben willst.
+Jeder Fall wird **einzeln** gespeichert; die beiden anderen Ansagen und alle übrigen
+Einstellungen bleiben dabei unberührt.
 
-| Fall | Audio-Datei |
+### 📥 Eigene Dateien verwenden
+
+Du kannst statt der Vorlagen auch eigene Ansagen nutzen:
+
+| Quelle | Wofür |
 |---|---|
-| **Zeit abgelaufen** | `timeup_*.mp3` |
-| **Schlafenszeit** | `limit_*.mp3` |
-| **Keine TV-Zeit** | `notimer_*.mp3` |
+| **Eigene Datei aus dem Media-Browser** | Fernseher/Chromecast. Datei nach `…/config/media/` kopieren und im Browser auswählen. **Für Alexa nicht möglich.** |
+| **Eigene Datei aus dem Ordner `www/`** | Auch für **Alexa** – Datei nach `…/config/www/` legen, die Internet-Adresse bildet MedienStop.de selbst. |
+| **Eigene URL** | Beliebige Adresse im Internet. |
+| **Text-Ansage** | Alexa liest einen frei eingegebenen Satz vor. |
+| **Eingebauter Alexa-Klang** | Glocke, Türgong usw. direkt von Amazon. |
+| **Keine Ansage** | Fernseher geht sofort aus. |
 
-**Hinzufügen:** genau wie bei den Videos (siehe
-[📥 So fügst du die Medien hinzu](#-so-fügst-du-die-medien-hinzu)) – du wählst im
-Media-Browser einfach die **`.mp3`**-Datei statt der `.mp4`. Als Ziel kannst du dann
-auch einen reinen **Lautsprecher** als „Video-Player" eintragen.
+> [!IMPORTANT]
+> **Eigene Audios für Alexa müssen konvertiert werden.** Amazon akzeptiert nur MP3 in
+> einem ganz bestimmten Format – passt es nicht, bleibt der Echo **stumm, ohne
+> Fehlermeldung**. Die vollständige Anleitung mit fertigem Befehl steht in
+> **[`media/README.md`](media/README.md)**. Die mitgelieferten Audio-Vorlagen sind
+> bereits passend aufbereitet.
+
+**Testen:** Am Hub-Gerät gibt es für **jeden der drei Fälle** einen eigenen
+Test-Knopf. Alternativ die Aktion `medienstop.test_video`
+(Entwicklerwerkzeuge → Aktionen).
 
 > [!WARNING]
 > **Öffnet sich der Browser statt des Videos?** (Panasonic, Samsung, LG, Android-TV)
@@ -195,31 +206,56 @@ auch einen reinen **Lautsprecher** als „Video-Player" eintragen.
 > „Video-Player". Für reine **Audio**-Ansagen kannst du auch einen Lautsprecher als
 > Ziel nehmen.
 
-## 🗣️ Alternative: Text-Ansage über Alexa/Echo
+## 🗣️ Ansagen über Alexa/Echo
 
-Statt einer Video-/Audiodatei kann jede der drei Ansagen auch als **gesprochener
-Text** ausgegeben werden – ideal für einen **Alexa/Echo-Lautsprecher** als
-Video-Player, da der nicht ohne Weiteres eigene Mediendateien abspielen kann.
+Ein **Echo** kann als Ziel für die Ansagen dienen – entweder als **gesprochener
+Text**, als **Audiodatei** oder als **eingebauter Alexa-Klang**.
 
 1. **Voraussetzung:** Die (kostenlose, per HACS installierbare) Integration
    **[Alexa Media Player](https://github.com/alandtse/alexa_media_player)** muss
    eingerichtet sein und deinen Echo als `media_player`-Entity bereitstellen.
-2. Diese Entity unter *MedienStop.de → Konfigurieren* als **„Video-Player"**
-   auswählen (genau wie einen Chromecast).
-3. Unter *MedienStop.de → Konfigurieren → Videos* im Feld **„…oder Text-Ansage"**
-   den gewünschten Satz eintragen (z. B. „Deine Zeit ist um, mach den Fernseher
-   aus."). Ist ein Text eingetragen, wird er beim Abschalten **statt** eines
-   eventuell zusätzlich gesetzten Videos vorgelesen.
-4. Für Ansagen muss in der Alexa-App bei diesem Gerät **„Communications"**
-   aktiviert sein – sonst bleibt der Lautsprecher stumm, ohne Fehlermeldung in
-   Home Assistant.
+2. Diese Entity unter *MedienStop.de → Konfigurieren → Grundeinstellungen* als
+   **„Video-Player"** auswählen (genau wie einen Chromecast).
+3. Beim gewünschten Fall unter **„Quelle der Ansage"** wählen:
+   * **Vorlage · Audio** – die mitgelieferte MP3, sofort einsatzbereit.
+   * **Text-Ansage** – ein frei eingegebener Satz, den Alexa vorliest.
+   * **Eingebauter Alexa-Klang** – z. B. Glocke oder Türgong.
+   * **Eigene Datei aus dem Ordner `www/`** – siehe
+     [`media/README.md`](media/README.md) für die nötige Konvertierung.
+4. Für gesprochene Ansagen muss in der Alexa-App bei diesem Gerät
+   **„Communications"** aktiviert sein – sonst bleibt der Lautsprecher stumm, ohne
+   Fehlermeldung in Home Assistant.
 
 > [!NOTE]
-> Öffnest du den **Media-Browser** im Video-Feld für ein Alexa-Gerät, meldet
-> Home Assistant „Mediaplayer unterstützt kein Auswählen aus Medienquellen" – das
-> ist eine Einschränkung der Alexa-Integration selbst (sie kann keine Dateien
-> durchsuchen), keine Einschränkung von MedienStop.de. Für Alexa/Echo einfach die
-> **Text-Ansage** statt des Media-Browsers nutzen.
+> **Videos und Dateien aus dem Media-Browser kann ein Echo grundsätzlich nicht
+> abspielen** – das liegt an Amazon, nicht an MedienStop.de. MedienStop.de erkennt
+> das und weist dich mit einem Hinweis auf die passende Alternative hin, statt
+> wortlos nichts zu tun.
+
+## 🪝 Hooks für eigene Automatisierungen
+
+Je Kind (und für den Elternmodus) kannst du zwei Adressen hinterlegen: eine wird
+aufgerufen, sobald das Kind **anfängt** zu schauen, die andere, sobald es **aufhört**.
+Damit lassen sich eigene Automatisierungen anstoßen (Licht dimmen, Nachricht aufs
+Handy …).
+
+**Mit einem Home-Assistant-Webhook verbinden:**
+1. *Einstellungen → Automatisierungen → **Automatisierung erstellen*** → als Auslöser
+   **Webhook** wählen. Home Assistant zeigt dir eine Adresse der Form
+   `https://<deine-ha-adresse>/api/webhook/<lange-id>`.
+2. Diese Adresse in MedienStop.de beim gewünschten Kind ins Feld **„Hook aktiv"**
+   bzw. **„Hook inaktiv"** eintragen (am Kind-Gerät unter *Einstellungen → Geräte &
+   Dienste → MedienStop.de*).
+
+> [!NOTE]
+> MedienStop.de ruft die Adresse per **POST** auf – genau das erwartet ein
+> Home-Assistant-Webhook. Nur wenn das Ziel kein POST annimmt (z. B. IFTTT), wird
+> automatisch auf `GET` zurückgefallen. Ob ein Aufruf geklappt hat, steht im
+> Protokoll (*Einstellungen → System → Protokolle*, Filter `MedienStop.de`).
+
+> [!WARNING]
+> Die Adressen dürfen **höchstens 255 Zeichen** lang sein – das ist eine feste
+> Grenze von Home Assistant. Webhook-Adressen liegen normalerweise weit darunter.
 
 ## 🩺 Fehlersuche
 

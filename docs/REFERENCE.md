@@ -16,11 +16,17 @@
 ## Config-Keys (entry.data)
 `num_children (1-9)`, `num_profiles (1-5)`, `tv_entity`, `video_player`,
 `kid_dashboard`, `names {kind_n/profil_n: Name}`, `tab_users {kind_n: user_id}`,
-`admin_users [user_id]`, `videos {timeup/limit/notimer: {id, type, delay, tts?}}`.
-`tts` (optional, freier Text) ist die Alternative zu `id`/`type`: eine Text-Ansage
-statt Video/Audio-Datei (z. B. für Alexa/Echo via `notify.alexa_media`, siehe
-`docs/ARCHITECTURE.md`). Ist `tts` gesetzt, hat sie beim Abschalten Vorrang vor
-`id`.
+`admin_users [user_id]`, `videos {timeup/limit/notimer: {src, delay, …}}`.
+
+Ein Ansage-Eintrag hat immer `src` (Quelle) und `delay` (Sekunden bis TV-Aus), plus
+je nach Quelle ein Feld: `id`+`type` (bei `media`/`url`/Vorlagen), `file` (bei `www`,
+nur der Dateiname), `tts` oder `sound`. Mögliche `src`-Werte:
+`video_timeup|video_limit|video_notimer|audio_timeup|audio_limit|audio_notimer`
+(mitgelieferte Vorlagen), `media`, `www`, `url`, `tts`, `sound`, `none`.
+
+> Einträge aus ≤ 2.4.x (`{id, type, delay, tts}`) werden von `normalize_announce()`
+> beim Lesen weiterhin verstanden — es wird nichts migriert oder umgeschrieben.
+> Details siehe `docs/ARCHITECTURE.md`.
 
 ## Entities & entity_id-Muster
 Hub-Gerät „MedienStop.de" (Anzeigename; interner Slug „medienstop" bei

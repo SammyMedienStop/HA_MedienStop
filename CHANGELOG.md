@@ -1,5 +1,56 @@
 # Changelog
 
+## 2.5.0
+- **Neu: Mitgelieferte Ansagen zum Anklicken.** In *Konfigurieren → Ansage …* gibt es
+  jetzt **eine Auswahlliste** mit den fertigen MedienStop-Ansagen – je Fall als
+  **Video** (für Fernseher/Chromecast) und als **Audio** (auch für Alexa). Du musst
+  **nichts mehr herunterladen und nichts mehr in den Medien-Ordner kopieren** – ein
+  Klick genügt.
+- **Neu: Eigene MP3 auf Alexa/Echo.** MedienStop.de kann Audiodateien jetzt auch auf
+  einem Echo abspielen. Die mitgelieferten Audios sind dafür passend aufbereitet.
+  Für **eigene** Dateien gelten Amazons strenge Formatvorgaben – die komplette
+  Anleitung zum Konvertieren steht in [`media/README.md`](media/README.md).
+- **Neu: Jede Ansage einzeln änderbar.** Die Einstellungen sind jetzt ein **Menü**:
+  Du änderst gezielt *eine* Ansage, ohne dich durch Kinderzahl, Namen und
+  Sichtbarkeit klicken zu müssen – und ohne die beiden anderen Ansagen anzufassen.
+- **Neu: Testen vor dem Speichern.** Im Ansage-Formular gibt es das Feld
+  **„Jetzt testen – noch nicht speichern"**. Damit hörst du dir die Ansage sofort an;
+  gespeichert wird erst, wenn du das Häkchen wieder entfernst und absendest.
+  Zusätzlich gibt es jetzt am Hub-Gerät **je einen Test-Knopf für alle drei Fälle**
+  (vorher nur für „Zeit abgelaufen").
+- **Neu:** Eingebaute **Alexa-Klänge** (Glocke, Türgong …) als Ansage wählbar.
+- **Fix:** Ein einmal gesetztes Video ließ sich **nicht mehr entfernen** – jetzt geht
+  das über die Auswahl „Keine Ansage – sofort ausschalten".
+- **Fix:** Eine Verzögerung von **0 Sekunden** wurde stillschweigend auf 10 gesetzt.
+- **Fix:** Beim Verringern der Kinderzahl gingen die **Namen** der entfallenen Kinder
+  verloren. Sie bleiben jetzt erhalten und sind wieder da, wenn du die Anzahl
+  erhöhst.
+- **Fix:** Beim Speichern wurde die Integration zweimal neu geladen.
+- Deine **bestehenden Videos und Einstellungen bleiben unverändert** und funktionieren
+  weiter wie bisher – es ist keine Anpassung nötig.
+
+## 2.4.1
+- **Fix (wichtig): Die Überwachung blieb irgendwann stehen.** Sobald man die
+  **Auto-Aus-Zeit** der Elternzeit verstellt oder den Schalter „Elternzeit Auto-Aus"
+  umgelegt hatte, hörte die 15-Sekunden-Prüfung dauerhaft auf zu arbeiten: Der
+  Fernseher wurde nicht mehr abgeschaltet, der Sensor **„Letzte Prüfung"** fror ein
+  und die Hooks feuerten nicht mehr. Das war die gemeinsame Ursache für gleich
+  mehrere gemeldete Fehler.
+- **Fix: „System aktiv" ist jetzt ein echter Not-Aus.** Ist der Schalter aus, rührt
+  MedienStop.de den Fernseher **gar nicht mehr an** – auch eine bereits laufende
+  Abschalt-Verzögerung wird sofort abgebrochen (vorher schaltete sie den Fernseher
+  trotzdem ab). Außerdem läuft in dieser Zeit **keine Statistik** mit: Restzeit und
+  „Heute geschaut" bleiben stehen, bis das System wieder eingeschaltet wird.
+- **Fix: Hooks lösen jetzt wirklich aus.** Die Hook-URLs wurden per `GET` aufgerufen –
+  Home-Assistant-Webhooks nehmen aber nur `POST` an und lehnten den Aufruf still ab.
+  Jetzt wird `POST` verwendet (mit `GET` als Rückfall für Dienste wie IFTTT), und
+  **Erfolg wie Fehler stehen im Protokoll** (Filter: `MedienStop.de`) – vorher war
+  überhaupt nichts zu sehen.
+- **Fix:** Nach einem Neustart von Home Assistant wurde fälschlich ein
+  „Elternzeit aktiv"-Hook ausgelöst. Beim ersten Durchlauf wird der Zustand jetzt nur
+  noch abgeglichen, ohne zu feuern.
+- Kein Neu-Erzeugen des Dashboards nötig – die Fixes wirken nach dem Update sofort.
+
 ## 2.4.0
 - **Neu: Text-Ansage statt Video/Audio-Datei** (z. B. für Alexa/Echo-Lautsprecher).
   Unter *Konfigurieren → Videos* gibt es je Grund (Zeit/Budget abgelaufen,

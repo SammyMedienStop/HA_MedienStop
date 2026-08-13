@@ -34,6 +34,15 @@ from homeassistant.util import dt as dt_util
 
 from .dashboard import build_dashboard_yaml
 from .const import (
+    ANNOUNCE_KEYS,
+    BUNDLED_MEDIA,
+    SRC_NONE,
+    SRC_SOUND,
+    SRC_TTS,
+    SRC_WWW,
+    announce_media,
+    as_int,
+    normalize_announce,
     ATTR_CHILD,
     CONF_NAMES,
     ATTR_MINUTES,
@@ -123,17 +132,26 @@ class MedienStopManager:
         self.parent_url_active: str = ""
         self.parent_url_inactive: str = ""
         self._parent_was_active = False
-        # Videos vor dem Ausschalten (werden im Options-Flow per Media-Browser gesetzt)
+        # Beim ersten _sync_webhooks()-Lauf werden die Flanken-Merker nur
+        # abgeglichen, nicht gefeuert (siehe _sync_webhooks).
+        self._webhooks_primed = False
+        # Ansagen vor dem Ausschalten (im Options-Flow je Grund einzeln einstellbar).
+        # normalize_announce versteht auch die alte Form aus <= 2.4.x weiter.
         _vids = entry.data.get(CONF_VIDEOS, {})
+        self.media_cfg: dict[str, dict] = {
+            key: normalize_announce(_vids.get(key)) for key in ANNOUNCE_KEYS
+        }
 
-        def _v(key):
-            d = _vids.get(key, {}) or {}
-            return (d.get("id", ""), (d.get("type") or None), int(d.get("delay", 10) or 10),
-                    (d.get("tts") or ""))
+        # Flache Attribute bleiben aus Bestandsschutz erhalten (Diagnose, Service,
+        # evtl. eigene Templates von Nutzern). Sie werden aus media_cfg abgeleitet.
+        def _flat(key):
+            cfg = self.media_cfg[key]
+            url, ctype = announce_media(cfg)
+            return url, ctype, cfg["delay"], (cfg.get("tts") or "")
 
-        self.video_timeup, self.video_timeup_type, self.delay_timeup, self.tts_timeup = _v("timeup")
-        self.video_limit, self.video_limit_type, self.delay_limit, self.tts_limit = _v("limit")
-        self.video_notimer, self.video_notimer_type, self.delay_notimer, self.tts_notimer = _v("notimer")
+        self.video_timeup, self.video_timeup_type, self.delay_timeup, self.tts_timeup = _flat("timeup")
+        self.video_limit, self.video_limit_type, self.delay_limit, self.tts_limit = _flat("limit")
+        self.video_notimer, self.video_notimer_type, self.delay_notimer, self.tts_notimer = _flat("notimer")
         self._off_pending = False
         self._unsub_off = None
 
@@ -277,22 +295,51 @@ class MedienStopManager:
 
     # --- Webhooks -----------------------------------------------------------
     def _fire_webhook(self, url: str) -> None:
-        """Ruft eine URL per HTTP GET auf (fire-and-forget)."""
+        """Ruft eine Hook-URL auf (fire-and-forget).
+
+        Home-Assistant-Webhooks akzeptieren standardmaessig NUR POST und PUT und
+        antworten auf GET mit 405. Frueher wurde hier ausschliesslich GET benutzt
+        und der Antwort-Status nie geprueft -> HA-Webhooks feuerten nie, ohne dass
+        irgendwo ein Fehler sichtbar wurde. Daher: POST zuerst, GET nur als
+        Rueckfall (fuer Dienste wie IFTTT, die GET erwarten). Protokolliert wird
+        auf WARNING, weil INFO in manchen Installationen nicht geschrieben wird.
+        """
         if not url:
             return
-        _LOGGER.info("MedienStop.de Webhook: %s", url)
 
         async def _do() -> None:
+            session = async_get_clientsession(self.hass)
+            timeout = aiohttp.ClientTimeout(total=10)
             try:
-                session = async_get_clientsession(self.hass)
-                await session.get(url, timeout=aiohttp.ClientTimeout(total=10))
+                async with session.post(url, timeout=timeout) as resp:
+                    status = resp.status
+                if status not in (405, 501):
+                    self._log_webhook("POST", status, url)
+                    return
+                # Ziel mag kein POST -> mit GET erneut versuchen.
+                async with session.get(url, timeout=timeout) as resp:
+                    self._log_webhook("GET", resp.status, url)
             except Exception as err:  # pragma: no cover
-                _LOGGER.warning("Webhook fehlgeschlagen (%s): %s", url, err)
+                _LOGGER.warning("MedienStop.de Hook FEHLGESCHLAGEN (%s): %s", url, err)
 
         self.hass.async_create_task(_do())
 
+    @staticmethod
+    def _log_webhook(method: str, status: int, url: str) -> None:
+        if status < 400:
+            _LOGGER.warning("MedienStop.de Hook OK (%s %s): %s", method, status, url)
+        else:
+            _LOGGER.warning("MedienStop.de Hook FEHLGESCHLAGEN (%s %s): %s", method, status, url)
+
     def _sync_webhooks(self) -> None:
         """Feuert Aktiv/Inaktiv-Webhooks bei Zustandswechseln (Kinder + Eltern)."""
+        primed = self._webhooks_primed
+        if not primed:
+            # Erster Lauf nach dem Start: die Flanken-Merker EINMALIG auf den
+            # Ist-Zustand setzen, ohne zu feuern. Sonst meldet z.B. ein per
+            # RestoreEntity wiederhergestellter Elternmodus nach jedem Neustart
+            # faelschlich eine frische "aktiv"-Flanke.
+            self._webhooks_primed = True
         for cid, c in self.children.items():
             active = (
                 c["state"] == STATE_RUNNING and c["remaining"] > 0
@@ -300,12 +347,14 @@ class MedienStopManager:
             )
             if active != c["_was_active"]:
                 c["_was_active"] = active
-                self._fire_webhook(c["url_active"] if active else c["url_inactive"])
+                if primed:
+                    self._fire_webhook(c["url_active"] if active else c["url_inactive"])
         if self.parent_override != self._parent_was_active:
             self._parent_was_active = self.parent_override
-            self._fire_webhook(
-                self.parent_url_active if self.parent_override else self.parent_url_inactive
-            )
+            if primed:
+                self._fire_webhook(
+                    self.parent_url_active if self.parent_override else self.parent_url_inactive
+                )
 
     # ========================================================================
     # TV-STEUERUNG (ausgewählte Entity)
@@ -322,6 +371,15 @@ class MedienStopManager:
     def _set_tv(self, turn_on: bool) -> None:
         """Schaltet die ausgewählte TV-Entity (generisch via homeassistant.turn_*)."""
         if not self.tv_entity_id:
+            return
+        # NOT-AUS: Ist "System aktiv" ausgeschaltet, greift MedienStop.de GAR NICHT
+        # mehr in den Fernseher ein - weder ein- noch ausschalten. Zentrales
+        # Sicherheitsnetz fuer alle Aufrufer (auch verzoegerte, siehe _do_off).
+        if not self.system_active:
+            _LOGGER.warning(
+                "MedienStop.de: TV-Schaltung (%s) unterdrueckt - 'System aktiv' ist AUS",
+                "an" if turn_on else "aus",
+            )
             return
         service = "turn_on" if turn_on else "turn_off"
         _LOGGER.warning("MedienStop.de schaltet Fernseher %s: %s", service, self.media_target())
@@ -448,7 +506,12 @@ class MedienStopManager:
 
     @callback
     def _on_tv_state(self, event) -> None:
-        """NUR bei echtem Ausschalten: laufende Timer pausieren + Elternmodus beenden."""
+        """NUR bei echtem Ausschalten: laufende Timer pausieren + Elternmodus beenden.
+
+        Bewusst OHNE `system_active`-Guard: hier wird nur interner Zustand
+        nachgefuehrt (Timer pausieren, Elternmodus beenden), es wird nichts am
+        Fernseher geschaltet. Der Not-Aus sitzt zentral in `_set_tv()`.
+        """
         new = event.data.get("new_state")
         old = event.data.get("old_state")
         new_state = (new.state if new else "").lower()
@@ -484,11 +547,16 @@ class MedienStopManager:
         # Heartbeat: zeigt, dass die Hintergrund-Prüfung läuft.
         self.last_check = dt_util.now()
         if not self.system_active:
+            # NOT-AUS: schwebende Abschaltung verwerfen und Hook-Flanken weiterhin
+            # melden - aber NICHTS zaehlen (das passiert ohnehin nur in _loop).
+            self._cancel_off()
+            self._sync_webhooks()
             self._notify()
             return
         if self.meal_pause:
             self._cancel_off()
             self._set_tv(False)
+            self._sync_webhooks()
             self._notify()
             return
         daytype = self.current_daytype()
@@ -504,11 +572,16 @@ class MedienStopManager:
     @callback
     def _loop(self, _now) -> None:
         if not self.system_active:
+            # NOT-AUS: schwebende Abschaltung verwerfen. Der Early-Return liegt
+            # bewusst VOR _scan(decrement=True) und der Elternzeit-Zaehlung weiter
+            # unten -> bei "System aktiv = aus" laeuft KEINE Statistik mit.
+            self._cancel_off()
             return
 
         # Essenspause: hart aus, nichts zählt herunter.
         if self.meal_pause:
             self._set_tv(False)
+            self._sync_webhooks()
             self._notify()
             return
 
@@ -572,7 +645,20 @@ class MedienStopManager:
                             "Ist das die richtige (media_player-)Entitaet und das Geraet an?"),
                 "notification_id": "medienstop_video_err"}, blocking=False)
 
-    def _speak(self, text: str) -> None:
+    def _speak_audio_url(self, url: str) -> None:
+        """Spielt eine MP3 auf einem Alexa/Echo ab (Umweg ueber SSML).
+
+        Alexa kann per `media_player.play_media` KEINE beliebigen Dateien
+        abspielen. Der einzige Weg ist ein SSML-<audio>-Tag in einer Ansage -
+        Amazons Server laedt die Datei dann selbst. Voraussetzungen (sonst bleibt
+        der Lautsprecher stumm, ohne Fehlermeldung):
+          * oeffentlich per HTTPS erreichbar, gueltiges Zertifikat
+          * MP3, MPEG Version 2, 48 kbps, 16000/22050/24000 Hz, max. 240 s
+        Die mitgelieferten Ansagen erfuellen das (siehe media/README.md).
+        """
+        self._speak(f"<audio src='{url}'/>", ssml=True)
+
+    def _speak(self, text: str, ssml: bool = False) -> None:
         """Liest einen Text auf dem Streaming-Ziel vor (Alternative zu Video/Audio-Datei,
         v.a. fuer Alexa/Echo-Lautsprecher, die keine eigene Mediendatei abspielen koennen)."""
         target = self.media_target()
@@ -581,9 +667,9 @@ class MedienStopManager:
         if not target.startswith("media_player."):
             _LOGGER.warning("Ansage benoetigt eine media_player-Entity (aktuell %s)", target)
             return
-        self.hass.async_create_task(self._async_speak(text))
+        self.hass.async_create_task(self._async_speak(text, ssml))
 
-    async def _async_speak(self, text: str) -> None:
+    async def _async_speak(self, text: str, ssml: bool = False) -> None:
         # Nutzt den notify-Service der "Alexa Media Player"-Integration (HACS), der
         # Text direkt ueber Amazons eigene Sprachausgabe vorliest - dafuer wird KEIN
         # gehostetes Audio/Video benoetigt (im Gegensatz zu _play_media). Funktioniert
@@ -600,11 +686,14 @@ class MedienStopManager:
                             "einem Alexa/Echo-Geraet abspielen."),
                 "notification_id": "medienstop_tts_err"}, blocking=False)
             return
-        _LOGGER.info("MedienStop.de Ansage -> Ziel=%s, text=%s", target, text)
+        # Reiner Text -> "announce" (mit Aufmerksamkeitston). Ein SSML-<audio>-Tag
+        # muss dagegen als "tts" gesendet werden, sonst spielt Amazon die Datei nicht.
+        msg_type = "tts" if ssml else "announce"
+        _LOGGER.warning("MedienStop.de Ansage -> Ziel=%s, typ=%s, text=%s", target, msg_type, text)
         try:
             await self.hass.services.async_call(
                 "notify", "alexa_media",
-                {"message": text, "target": target, "data": {"type": "announce"}},
+                {"message": text, "target": target, "data": {"type": msg_type}},
                 blocking=True,
             )
         except Exception as err:  # pragma: no cover
@@ -616,53 +705,144 @@ class MedienStopManager:
                             "Das wird fuer Ansagen (announce) benoetigt."),
                 "notification_id": "medienstop_tts_err"}, blocking=False)
 
+    # --- Ansage-Weiche (Vorlage / eigene Datei / URL / Text / Alexa-Klang) ----
+    def _target_is_alexa(self) -> bool:
+        """True, wenn das Streaming-Ziel ein Alexa/Echo-Geraet ist.
+
+        Alexa-Geraete koennen KEINE beliebigen Mediendateien abspielen; sie
+        brauchen den Umweg ueber einen SSML-<audio>-Tag. Erkannt wird das an der
+        Integration hinter der Entity ("alexa_media"), damit der Nutzer davon
+        nichts wissen muss.
+        """
+        target = self.media_target()
+        if not target:
+            return False
+        try:
+            from homeassistant.helpers import entity_registry as er
+            entry = er.async_get(self.hass).async_get(target)
+            return bool(entry and entry.platform == "alexa_media")
+        except Exception:  # pragma: no cover - Registry nicht verfuegbar
+            return False
+
+    def _public_local_url(self, filename: str) -> str:
+        """Baut die oeffentliche HTTPS-Adresse einer Datei aus <config>/www/.
+
+        Amazons Server laedt die Datei SELBST - sie muss also von aussen per
+        HTTPS erreichbar sein. Dateien unter <config>/www/ werden als /local/...
+        ohne Zugangs-Token ausgeliefert; media_source-URLs funktionieren dafuer
+        NICHT. Gespeichert wird nur der Dateiname, damit ein Wechsel der
+        externen Adresse (Nabu Casa, eigene Domain) nichts kaputt macht.
+        """
+        from homeassistant.helpers.network import NoURLAvailableError, get_url
+        try:
+            base = get_url(self.hass, prefer_external=True,
+                           allow_internal=False, require_ssl=True)
+        except NoURLAvailableError:
+            return ""
+        return f"{base.rstrip('/')}/local/{filename.lstrip('/')}"
+
+    def announce(self, reason: str, cfg: dict | None = None) -> tuple[bool, str]:
+        """Spielt die Ansage fuer einen Grund ab. -> (gestartet, Klartext-Meldung)
+
+        `cfg=None` nutzt die gespeicherte Einstellung. Wird ein `cfg` uebergeben,
+        werden NOCH NICHT GESPEICHERTE Formularwerte abgespielt - das ist der
+        Test-Knopf im Konfigurations-Dialog.
+        """
+        cfg = normalize_announce(cfg if cfg is not None else self.media_cfg.get(reason))
+        src = cfg.get("src", SRC_NONE)
+        target = self.media_target()
+
+        if src == SRC_NONE:
+            return False, "Keine Ansage eingestellt - der Fernseher geht sofort aus."
+        if not target:
+            return False, ("Es ist kein Ziel eingerichtet. Bitte unter Konfigurieren "
+                           "einen Fernseher oder Video-Player waehlen.")
+        if not target.startswith("media_player."):
+            return False, (f"Das Ziel {target} ist kein media_player. Fuer Ansagen bitte "
+                           "unter Konfigurieren einen Video-Player (media_player) waehlen.")
+
+        is_alexa = self._target_is_alexa()
+
+        # --- Text-Ansage: laeuft ueber Alexas Sprachausgabe ------------------
+        if src == SRC_TTS:
+            text = cfg.get("tts") or ""
+            if not text:
+                return False, "Es ist kein Ansage-Text eingetragen."
+            self._speak(text)
+            return True, f"Text-Ansage an {target}: „{text}“"
+
+        # --- Eingebauter Alexa-Klang -----------------------------------------
+        if src == SRC_SOUND:
+            sound = cfg.get("sound") or ""
+            if not sound:
+                return False, "Es ist kein Klang ausgewaehlt."
+            if not is_alexa:
+                return False, (f"Eingebaute Alexa-Klaenge gibt es nur auf Echo-Geraeten. "
+                               f"{target} ist keins - bitte eine andere Quelle waehlen.")
+            self._play_media(sound, "sound")
+            return True, f"Alexa-Klang „{sound}“ an {target}"
+
+        # --- Dateibasierte Quellen -------------------------------------------
+        if src == SRC_WWW:
+            filename = cfg.get("file") or ""
+            if not filename:
+                return False, "Es ist keine Datei aus dem Ordner www/ ausgewaehlt."
+            url = self._public_local_url(filename)
+            if not url:
+                return False, ("Home Assistant hat keine oeffentliche HTTPS-Adresse. "
+                               "Eigene Dateien brauchen Nabu Casa oder eine eigene Domain - "
+                               "sonst bitte eine mitgelieferte Vorlage verwenden.")
+            ctype = self._media_type(url)
+        else:
+            url, ctype = announce_media(cfg)
+            if not url:
+                return False, "Fuer diese Ansage ist keine Datei hinterlegt."
+            ctype = ctype or self._media_type(url)
+
+        if is_alexa:
+            # Alexa kann weder media-source-Dateien noch Videos abspielen.
+            if url.startswith("media-source"):
+                return False, ("Alexa kann keine Dateien aus dem Media-Browser abspielen. "
+                               "Bitte eine mitgelieferte Audio-Vorlage, eine Datei aus www/ "
+                               "oder eine Text-Ansage waehlen.")
+            if ctype == "video" or url.lower().split("?")[0].endswith((".mp4", ".mkv", ".avi")):
+                return False, ("Alexa kann keine Videos abspielen. Bitte die passende "
+                               "Audio-Vorlage (MP3) statt der Video-Vorlage waehlen.")
+            self._speak_audio_url(url)
+            return True, f"Audio-Ansage an {target} (Alexa):\n{url}"
+
+        self._play_media(url, ctype)
+        return True, f"Ansage an {target}:\n{url}"
+
     def _goodbye_then_off(self, reason: str) -> None:
-        """Spielt das passende Video und schaltet den TV nach Verzoegerung aus."""
+        """Spielt die passende Ansage und schaltet den TV nach Verzoegerung aus."""
         if self._off_pending:
             return
         self._diag_log(f"ABSCHALTUNG geplant reason={reason}")
-        url = {"timeup": self.video_timeup, "limit": self.video_limit,
-               "notimer": self.video_notimer}.get(reason, "")
-        ctype = {"timeup": self.video_timeup_type, "limit": self.video_limit_type,
-                 "notimer": self.video_notimer_type}.get(reason)
-        text = {"timeup": self.tts_timeup, "limit": self.tts_limit,
-                "notimer": self.tts_notimer}.get(reason, "")
         self._off_pending = True
-        delays = {"timeup": self.delay_timeup, "limit": self.delay_limit,
-                  "notimer": self.delay_notimer}
-        if text:
-            # Text-Ansage (z.B. Alexa/Echo) hat Vorrang vor Video/Audio-Datei.
-            self._speak(text)
-            delay = max(0, int(delays.get(reason, 10)))
-        elif url:
-            self._play_media(url, ctype)
-            delay = max(0, int(delays.get(reason, 10)))
-        else:
-            delay = 0  # keine Ansage/kein Video -> sofort aus (wie bisher)
-        _LOGGER.warning("Abschalt-Sequenz (%s): Ansage=%s, Video=%s, aus in %ss",
-                        reason, bool(text), bool(url), delay)
+        cfg = self.media_cfg.get(reason) or {}
+        gespielt, meldung = self.announce(reason)
+        # Ohne Ansage sofort aus (wie bisher), sonst die eingestellte Verzoegerung.
+        delay = max(0, as_int(cfg.get("delay"), 10)) if gespielt else 0
+        _LOGGER.warning("Abschalt-Sequenz (%s): %s | aus in %ss", reason, meldung, delay)
         self._unsub_off = async_call_later(self.hass, delay, self._do_off)
 
     def test_video(self, which: str = "timeup") -> bool:
-        """Spielt die konfigurierte Ansage/Video sofort ab (zum Testen). True = gespielt."""
-        url = {"timeup": self.video_timeup, "limit": self.video_limit,
-               "notimer": self.video_notimer}.get(which, "")
-        ctype = {"timeup": self.video_timeup_type, "limit": self.video_limit_type,
-                 "notimer": self.video_notimer_type}.get(which)
-        text = {"timeup": self.tts_timeup, "limit": self.tts_limit,
-                "notimer": self.tts_notimer}.get(which, "")
-        if text:
-            self._speak(text)
-            return True
-        if url:
-            self._play_media(url, ctype)
-            return True
-        return False
+        """Spielt die konfigurierte Ansage sofort ab (zum Testen). True = gespielt."""
+        gespielt, _meldung = self.announce(which)
+        return gespielt
 
     @callback
     def _do_off(self, _now) -> None:
         self._unsub_off = None
         self._off_pending = False
+        # NOT-AUS: Eine Abschaltung wird bis zu 600 s im Voraus geplant. Wird in
+        # dieser Zeit "System aktiv" ausgeschaltet, muss der bereits laufende
+        # Zeitgeber wirkungslos verfallen (frueher schaltete er den TV trotzdem ab).
+        if not self.system_active:
+            _LOGGER.warning("MedienStop.de: geplante Abschaltung verworfen - 'System aktiv' ist AUS")
+            self._notify()
+            return
         self._set_tv(False)
         self._notify()
 
@@ -725,6 +905,11 @@ class MedienStopManager:
     def diagnostics_text(self) -> str:
         """Menschlich lesbarer Statusbericht: warum (nicht) abgeschaltet wird."""
         lines = []
+        if not self.system_active:
+            lines.append("*** NOT-AUS: 'System aktiv' ist AUS ***")
+            lines.append("MedienStop.de schaltet den Fernseher weder ein noch aus,")
+            lines.append("und es wird KEINE Zeit abgezogen und KEINE Statistik gezählt.")
+            lines.append("")
         lines.append(f"System aktiv:    {self.system_active}")
         lines.append(f"Elternzeit:      {self.parent_override}")
         lines.append(f"Essenspause:     {self.meal_pause}")
@@ -769,21 +954,17 @@ class MedienStopManager:
         self._notify()
 
     def _schedule_autooff(self) -> None:
-        """(Neu) registriert den täglichen Auto-Aus-Zeitpunkt für die Elternzeit."""
+        """(Neu) registriert den täglichen Auto-Aus-Zeitpunkt für die Elternzeit.
+
+        WICHTIG: Hier NUR den Auto-Aus-Zeitgeber an-/abmelden! Frueher wurden hier
+        (aus `shutdown()` kopiert) auch `_unsub_enforce`, `_unsub_tvstate` und
+        `_unsub_off` abgemeldet - aber nie wieder registriert. Jedes Verstellen der
+        Auto-Aus-Zeit oder des Auto-Aus-Schalters legte damit die 15-Sekunden-
+        Pruefung und die TV-Zustandsueberwachung dauerhaft lahm.
+        """
         if self._unsub_autooff:
             self._unsub_autooff()
             self._unsub_autooff = None
-        if self._unsub_enforce:
-            self._unsub_enforce()
-            self._unsub_enforce = None
-        if self._unsub_tvstate:
-            self._unsub_tvstate()
-            self._unsub_tvstate = None
-        if self._unsub_off:
-            self._unsub_off()
-            self._unsub_off = None
-        self._unsub_tvstate = None
-        self.last_reset = dt_util.now().date()
         if not self.parent_autooff_enabled:
             return
         t = self.parent_autooff_time
@@ -794,7 +975,12 @@ class MedienStopManager:
 
     @callback
     def _autooff_fire(self, _now) -> None:
-        """Wird täglich zur eingestellten Zeit (parent_autooff_time) aufgerufen."""
+        """Wird täglich zur eingestellten Zeit (parent_autooff_time) aufgerufen.
+
+        Bewusst OHNE `system_active`-Guard: beendet nur die Elternzeit (interner
+        Zustand). Der anschliessende `_enforce_tv()` ist bereits geguardet, und
+        `_set_tv()` faengt den Not-Aus in jedem Fall ab.
+        """
         _LOGGER.info(
             "Auto-Aus ausgelöst um %s (Elternzeit war %s)",
             self.parent_autooff_time, "an" if self.parent_override else "aus",
@@ -1050,43 +1236,27 @@ def _async_register_services(hass: HomeAssistant) -> None:
         en = (hass.config.language or "de")[:2].lower() == "en"
         title = "MedienStop.de – Video test" if en else "MedienStop.de – Video-Test"
         for mgr in _managers(hass):
-            url = {"timeup": mgr.video_timeup, "limit": mgr.video_limit,
-                   "notimer": mgr.video_notimer}.get(which, "")
-            text = {"timeup": mgr.tts_timeup, "limit": mgr.tts_limit,
-                    "notimer": mgr.tts_notimer}.get(which, "")
-            tgt = mgr.media_target()
-            if not url and not text:
-                msg = (f"No video/announcement is set for '{which}'. Please set one "
-                       "under Configure -> Videos."
+            gespielt, meldung = mgr.announce(which)
+            if not gespielt:
+                msg = meldung
+            elif mgr._target_is_alexa():
+                msg = (meldung + "\n\n"
+                       "Nothing audible? The Echo needs the (HACS) **Alexa Media Player** "
+                       "integration, and audio files must meet Amazon's format rules "
+                       "(see media/README.md)."
                        if en else
-                       f"Fuer '{which}' ist weder Video noch Text-Ansage gesetzt. Bitte "
-                       "unter Konfigurieren -> Videos auswaehlen.")
-            elif not (tgt or "").startswith("media_player."):
-                msg = (f"The streaming target **{tgt}** is not a media_player. Please "
-                       "choose a video player (media_player) under Configure."
-                       if en else
-                       f"Das Streaming-Ziel **{tgt}** ist kein media_player. "
-                       "Bitte unter Konfigurieren einen Video-Player (media_player) waehlen.")
-            elif text:
-                mgr.test_video(which)
-                msg = (f"Sending announcement to **{tgt}**:\n{text}\n\n"
-                       "Nothing audible? This target needs the (HACS) **Alexa Media "
-                       "Player** integration and 'Communications' enabled for this "
-                       "device in the Alexa app."
-                       if en else
-                       f"Sende Ansage an **{tgt}**:\n{text}\n\n"
-                       "Nichts zu hoeren? Dieses Ziel benoetigt die (HACS-)Integration "
-                       "**Alexa Media Player** und 'Communications' fuer dieses Geraet "
-                       "in der Alexa-App aktiviert.")
+                       meldung + "\n\n"
+                       "Nichts zu hoeren? Der Echo benoetigt die (HACS-)Integration "
+                       "**Alexa Media Player**, und Audiodateien muessen Amazons "
+                       "Formatvorgaben erfuellen (siehe media/README.md).")
             else:
-                mgr.test_video(which)
-                msg = (f"Sending video to **{tgt}**:\n{url}\n\n"
+                msg = (meldung + "\n\n"
                        "Does the **browser** open instead of the video picture? Then this "
                        "target is not a directly streamable player (e.g. Samsung/LG/Android "
                        "TV). In that case choose a **Cast/Chromecast player** as 'video "
                        "player' under Configure."
                        if en else
-                       f"Sende Video an **{tgt}**:\n{url}\n\n"
+                       meldung + "\n\n"
                        "Oeffnet sich der **Browser** statt des Videobilds? Dann ist dieses Ziel "
                        "kein direkt streamfaehiger Player (z.B. Samsung/LG/Android-TV). Waehle dann "
                        "unter Konfigurieren einen **Cast-/Chromecast-Player** als 'Video-Player'.")

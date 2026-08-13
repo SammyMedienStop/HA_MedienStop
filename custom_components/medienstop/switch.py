@@ -69,6 +69,10 @@ class MSSwitch(MedienStopEntity, SwitchEntity, RestoreEntity):
     def _apply(self, value: bool) -> None:
         _LOGGER.warning("MedienStop.de: Schalter '%s' -> %s (manuell)", self._key, value)
         setattr(self.manager, self._key, value)
+        # NOT-AUS: "System aktiv" aus -> eine bereits geplante Abschaltung sofort
+        # verwerfen (nicht erst beim naechsten Tick in 15/60 Sekunden).
+        if self._key == "system_active" and not value:
+            self.manager._cancel_off()
         # Sofortige Nebenwirkungen auf den Fernseher:
         if self._key == "parent_autooff_enabled":
             self.manager._schedule_autooff()   # Zeitplan neu setzen

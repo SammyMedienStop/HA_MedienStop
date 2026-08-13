@@ -55,6 +55,50 @@ gesetzter URL `_play_media()` genutzt. Danach TV-Aus nach `delay` s
 `_cancel_off()` bricht ab (z. B. wenn wieder berechtigt oder Start). Ist weder Text
 noch URL gesetzt → sofort aus (delay 0).
 
+## Ansage-Quellen (`const.py` + `announce()`)
+Je Grund wird **eine** Quelle gespeichert: `{"src": …, "delay": …}` plus je nach
+Quelle `id`/`type`, `file`, `tts` oder `sound`.
+
+| `src` | Bedeutung |
+|---|---|
+| `video_*` / `audio_*` (6 Werte) | mitgelieferte Vorlage; URL aus `BUNDLED_MEDIA` (raw.githubusercontent, Branch `main`) |
+| `media` | eigene Datei aus dem Media-Browser (`media-source://`) |
+| `www` | eigene Datei aus `<config>/www/`; nur der **Dateiname** wird gespeichert |
+| `url` | frei eingegebene URL |
+| `tts` | Text, den Alexa vorliest |
+| `sound` | eingebauter Alexa-Klang (`media_content_type="sound"`) |
+| `none` | keine Ansage → sofort aus |
+
+`normalize_announce()` liest die **alte** Form aus ≤ 2.4.x (`{id,type,delay,tts}`)
+weiter und bildet deren Vorrang ab (TTS schlug Video). Es wird **nichts migriert** —
+die neue Form entsteht erst, wenn der Nutzer genau diese Ansage speichert. Deshalb
+gibt es weder einen `ConfigEntry.VERSION`-Bump noch `async_migrate_entry`.
+`as_int()` ersetzt `int(x or default)`, damit eine Verzögerung von **0** erhalten
+bleibt.
+
+`MedienStopManager.announce(reason, cfg=None)` → `(gestartet, Klartext)` ist die
+zentrale Weiche. Mit `cfg` lassen sich **ungespeicherte** Formularwerte abspielen —
+das ist der Test-Knopf im Options-Flow. Die flachen Attribute (`video_*`, `tts_*`,
+`delay_*`) bleiben aus Bestandsschutz erhalten und werden aus `media_cfg` abgeleitet.
+
+`_target_is_alexa()` prüft über die Entity-Registry, ob hinter `media_target()` die
+Integration `alexa_media` steckt. Ist das so, gilt:
+- Videos und `media-source://`-Dateien werden **abgelehnt** (mit erklärender Meldung),
+- Audio-URLs laufen über `_speak_audio_url()` → SSML `<audio src='…'/>` als
+  `notify.alexa_media` mit **`type: "tts"`** (reiner Text nutzt weiterhin `announce`).
+
+## Warum Alexa einen Sonderweg braucht
+Ein Echo kann per `media_player.play_media` **keine** beliebigen Dateien abspielen.
+Der einzige Weg ist ein SSML-`<audio>`-Tag; Amazons Server lädt die Datei dann
+**selbst**. Daraus folgen harte Auflagen (Details in `media/README.md`):
+MP3 **MPEG Version 2**, **48 kbps** CBR, **16000/22050/24000 Hz**, ≤ 240 s, und
+erreichbar über **öffentliches HTTPS mit gültigem Zertifikat**. Passt etwas nicht,
+bleibt der Lautsprecher stumm — **ohne Fehlermeldung**.
+Deshalb: `<config>/www/` (→ `/local/…`, wird **ohne** Auth-Token ausgeliefert) ist der
+einzige gangbare Ort für eigene Dateien; `media_source`-URLs scheitern, weil Amazons
+Abrufer kein Token hat. `_public_local_url()` baut die Adresse zur Laufzeit über
+`get_url(..., require_ssl=True)`, damit ein Wechsel der externen Adresse nichts bricht.
+
 ## Text-Ansage `_speak(text)` / `_async_speak(text)`
 Alternative zu Video/Audio-Datei, v. a. für **Alexa/Echo-Lautsprecher**: ruft den
 `notify.alexa_media`-Service der (separaten, per HACS installierten) Integration
@@ -98,7 +142,38 @@ Restzeit aller Kinder = child_budget (Mitternacht + „Budgets anwenden"-Button)
 
 ## Webhooks (`_sync_webhooks`)
 Flankengesteuert: je Kind `active = running & remaining>0 & within_window &
-!meal_pause`; Wechsel → `url_active/inactive` per HTTP GET. Elternmodus analog.
+!meal_pause`; Wechsel → `url_active/inactive`. Elternmodus analog.
+
+`_fire_webhook` ruft **HTTP POST** auf (HA-Webhook-Trigger akzeptieren per Default
+nur POST/PUT und antworten auf GET mit **405**); nur bei 405/501 wird auf **GET**
+zurückgefallen (IFTTT & Co.). Der Antwort-Status wird ausgewertet und Erfolg wie
+Misserfolg auf **WARNING** protokolliert — früher wurde per GET gefeuert, der Status
+nie geprüft und nur auf INFO geloggt, weshalb HA-Webhooks vollkommen still nie
+ausgelöst wurden.
+
+Beim **ersten** `_sync_webhooks()`-Lauf nach dem Start werden die Flanken-Merker nur
+abgeglichen (`_webhooks_primed`), ohne zu feuern — sonst meldet ein per RestoreEntity
+wiederhergestellter Elternmodus nach jedem Neustart fälschlich eine „aktiv"-Flanke.
+
+> Hook-URLs sind Entity-States und damit auf **255 Zeichen** begrenzt (harte
+> HA-Grenze `MAX_LENGTH_STATE_STATE`). HA-Webhook-URLs liegen deutlich darunter.
+
+## Not-Aus: `system_active`
+Ist der Schalter **aus**, greift die Integration gar nicht mehr in den Fernseher ein
+und zählt nichts mit:
+- `_set_tv()` bricht als **zentrales Sicherheitsnetz** jede Schaltung ab (beide
+  Richtungen) — deckt auch verzögerte Aufrufer wie `_do_off` ab.
+- `_do_off()` verwirft zusätzlich explizit eine bereits geplante Abschaltung
+  (`_goodbye_then_off` plant bis zu 600 s im Voraus).
+- `_enforce_tick`/`_loop` rufen `_cancel_off()` **vor** ihrem Early-Return; die
+  Zählblöcke (`_scan(decrement=True)`, `parent_watched`) liegen bewusst **dahinter**
+  → keine Statistik läuft mit.
+- `switch.py::_apply` bricht eine schwebende Abschaltung sofort ab, statt auf den
+  nächsten Tick zu warten.
+- `_on_tv_state` und `_autooff_fire` bleiben ungeguardet: sie führen nur internen
+  Zustand nach und schalten selbst nichts.
+- `_midnight` läuft weiter — es zählt nichts, sondern setzt das Tagesbudget und
+  erkennt Wochen-/Monats-/Jahreswechsel.
 
 ## Dashboard-Generator (`dashboard.py`)
 `build_dashboard(num_children, num_profiles, child_names, profile_names, ids,

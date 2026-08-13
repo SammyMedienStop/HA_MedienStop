@@ -60,13 +60,25 @@
     "step": {
       "init": {
         "title": "MedienStop.de – Einstellungen",
-        "description": "Anzahl Kinder/Profile und Dashboard-Variante ändern. Danach wird neu geladen.",
+        "description": "Was möchtest du ändern? Jeder Bereich wird für sich gespeichert – die übrigen Einstellungen bleiben unberührt.",
+        "menu_options": {
+          "basis": "Grundeinstellungen (Kinder, Profile, Fernseher, Dashboard)",
+          "names": "Namen der Kinder und Profile",
+          "visibility": "Sichtbarkeit – wer sieht welchen Tab",
+          "ansage_timeup": "Ansage: Zeit/Budget abgelaufen",
+          "ansage_limit": "Ansage: Zeitfenster-Ende (Schlafenszeit)",
+          "ansage_notimer": "Ansage: Kein Timer / außerhalb der Zeit"
+        }
+      },
+      "basis": {
+        "title": "MedienStop.de – Grundeinstellungen",
+        "description": "Anzahl Kinder/Profile, Fernseher und Dashboard-Variante. Felder leeren entfernt die jeweilige Auswahl.",
         "data": {
           "num_children": "Anzahl der Kinder (1-9)",
           "num_profiles": "Anzahl der Zeit-Profile (1-5)",
           "kid_dashboard": "Kinder-Dashboard",
           "tv_entity": "Fernseher-Entität (optional)",
-          "video_player": "Video-Player zum Streamen (Cast/Chromecast, optional)"
+          "video_player": "Video-Player zum Streamen (Cast/Chromecast oder Alexa, optional)"
         }
       },
       "names": {
@@ -91,7 +103,7 @@
       },
       "visibility": {
         "title": "MedienStop.de – Sichtbarkeit",
-        "description": "Wähle zuerst die ELTERN (sie sehen die Eltern- und Einstellungs-Tabs). Optional: pro Kind einen Benutzer, der nur dessen Tab sieht. Leer = für alle sichtbar. Bleibt nach Updates erhalten.",
+        "description": "Wähle zuerst die ELTERN (sie sehen die Eltern- und Einstellungs-Tabs). Optional: pro Kind einen Benutzer, der nur dessen Tab sieht. Leer = für alle sichtbar.",
         "data": {
           "user_kind_1": "Benutzer für Kind 1",
           "user_kind_2": "Benutzer für Kind 2",
@@ -105,24 +117,54 @@
           "admin_users": "Eltern (sehen Eltern- & Einstellungs-Tabs)"
         }
       },
-      "videos": {
-        "title": "MedienStop.de – Videos",
-        "description": "Optional: Video/Bild vor dem Ausschalten – im Media-Browser auswählen, URL angeben oder als Text-Ansage (z. B. auf einem Alexa/Echo-Lautsprecher vorlesen lassen, dafür ist die Integration „Alexa Media Player“ nötig). Leer = sofort aus.",
+      "ansage_timeup": {
+        "title": "Ansage: Zeit/Budget abgelaufen",
+        "description": "Wähle aus, was vor dem Ausschalten abgespielt wird. Die **mitgelieferten Vorlagen** musst du nirgends herunterladen – sie funktionieren sofort. Mit **„Jetzt testen“** hörst du die Ansage ab, ohne sie zu speichern.\n\nHinweis: Ein Alexa/Echo kann keine Videos und keine Dateien aus dem Media-Browser abspielen – dort bitte eine Audio-Vorlage, eine Datei aus `www/` oder eine Text-Ansage wählen.\n\n{ergebnis}",
         "data": {
-          "media_timeup": "Video Zeit/Budget abgelaufen (auswählen)",
-          "url_timeup": "…oder URL (Zeit/Budget abgelaufen)",
-          "tts_timeup": "…oder Text-Ansage (Zeit/Budget abgelaufen, z. B. Alexa/Echo)",
-          "delay_timeup": "Verzögerung Zeit/Budget abgelaufen (Sek.)",
-          "media_limit": "Video Zeitfenster-Ende (auswählen)",
-          "url_limit": "…oder URL (Zeitfenster-Ende)",
-          "tts_limit": "…oder Text-Ansage (Zeitfenster-Ende, z. B. Alexa/Echo)",
-          "delay_limit": "Verzögerung Zeitfenster-Ende (Sek.)",
-          "media_notimer": "Video kein Timer (auswählen)",
-          "url_notimer": "…oder URL (kein Timer)",
-          "tts_notimer": "…oder Text-Ansage (kein Timer, z. B. Alexa/Echo)",
-          "delay_notimer": "Verzögerung kein Timer (Sek.)"
+          "src": "Quelle der Ansage",
+          "media": "Eigene Datei aus dem Media-Browser (leer lassen = bisherige behalten)",
+          "www_file": "Eigene Datei aus dem Ordner www/ (für Alexa)",
+          "url": "Eigene URL",
+          "tts": "Text, den Alexa vorlesen soll",
+          "sound": "Eingebauter Alexa-Klang",
+          "delay": "Verzögerung bis zum Ausschalten (Sek.)",
+          "test": "Jetzt testen – noch nicht speichern"
+        }
+      },
+      "ansage_limit": {
+        "title": "Ansage: Zeitfenster-Ende (Schlafenszeit)",
+        "description": "Wähle aus, was vor dem Ausschalten abgespielt wird. Die **mitgelieferten Vorlagen** musst du nirgends herunterladen – sie funktionieren sofort. Mit **„Jetzt testen“** hörst du die Ansage ab, ohne sie zu speichern.\n\nHinweis: Ein Alexa/Echo kann keine Videos und keine Dateien aus dem Media-Browser abspielen – dort bitte eine Audio-Vorlage, eine Datei aus `www/` oder eine Text-Ansage wählen.\n\n{ergebnis}",
+        "data": {
+          "src": "Quelle der Ansage",
+          "media": "Eigene Datei aus dem Media-Browser (leer lassen = bisherige behalten)",
+          "www_file": "Eigene Datei aus dem Ordner www/ (für Alexa)",
+          "url": "Eigene URL",
+          "tts": "Text, den Alexa vorlesen soll",
+          "sound": "Eingebauter Alexa-Klang",
+          "delay": "Verzögerung bis zum Ausschalten (Sek.)",
+          "test": "Jetzt testen – noch nicht speichern"
+        }
+      },
+      "ansage_notimer": {
+        "title": "Ansage: Kein Timer / außerhalb der Zeit",
+        "description": "Wähle aus, was vor dem Ausschalten abgespielt wird. Die **mitgelieferten Vorlagen** musst du nirgends herunterladen – sie funktionieren sofort. Mit **„Jetzt testen“** hörst du die Ansage ab, ohne sie zu speichern.\n\nHinweis: Ein Alexa/Echo kann keine Videos und keine Dateien aus dem Media-Browser abspielen – dort bitte eine Audio-Vorlage, eine Datei aus `www/` oder eine Text-Ansage wählen.\n\n{ergebnis}",
+        "data": {
+          "src": "Quelle der Ansage",
+          "media": "Eigene Datei aus dem Media-Browser (leer lassen = bisherige behalten)",
+          "www_file": "Eigene Datei aus dem Ordner www/ (für Alexa)",
+          "url": "Eigene URL",
+          "tts": "Text, den Alexa vorlesen soll",
+          "sound": "Eingebauter Alexa-Klang",
+          "delay": "Verzögerung bis zum Ausschalten (Sek.)",
+          "test": "Jetzt testen – noch nicht speichern"
         }
       }
+    },
+    "error": {
+      "test_fehlgeschlagen": "Die Ansage konnte nicht abgespielt werden – Einzelheiten stehen oben."
+    },
+    "abort": {
+      "keine_benutzer": "Es gibt keine Home-Assistant-Benutzer, denen Tabs zugeordnet werden könnten."
     }
   },
   "selector": {
@@ -131,62 +173,160 @@
         "shared_pin": "Variante 1 – Ein Dashboard für alle (PIN je Kind)",
         "per_child": "Variante 2 – Pro Kind ein Dashboard (Benutzerfreigabe)"
       }
+    },
+    "announce_source": {
+      "options": {
+        "video_timeup": "Vorlage · Video: „Fernsehzeit vorbei“",
+        "video_limit": "Vorlage · Video: „Schlaft gut“",
+        "video_notimer": "Vorlage · Video: „Keine TV-Zeit“",
+        "audio_timeup": "Vorlage · Audio (auch für Alexa): „Fernsehzeit vorbei“",
+        "audio_limit": "Vorlage · Audio (auch für Alexa): „Schlaft gut“",
+        "audio_notimer": "Vorlage · Audio (auch für Alexa): „Keine TV-Zeit“",
+        "media": "Eigene Datei aus dem Media-Browser (nicht für Alexa)",
+        "www": "Eigene Datei aus dem Ordner www/ (auch für Alexa)",
+        "url": "Eigene URL",
+        "tts": "Text-Ansage (Alexa spricht)",
+        "sound": "Eingebauter Alexa-Klang",
+        "none": "Keine Ansage – sofort ausschalten"
+      }
     }
   },
   "entity": {
     "sensor": {
-      "remaining": {"name": "Restzeit"},
-      "watched": {"name": "Heute geschaut"},
-      "watched_week": {"name": "Diese Woche"},
-      "watched_month": {"name": "Dieser Monat"},
-      "watched_year": {"name": "Dieses Jahr"},
-      "status": {"name": "Status"},
-      "parent_watched": {"name": "Elternzeit heute"},
-      "parent_watched_week": {"name": "Elternzeit Woche"},
-      "parent_watched_month": {"name": "Elternzeit Monat"},
-      "parent_watched_year": {"name": "Elternzeit Jahr"},
-      "last_check": {"name": "Letzte Prüfung"}
+      "remaining": {
+        "name": "Restzeit"
+      },
+      "watched": {
+        "name": "Heute geschaut"
+      },
+      "watched_week": {
+        "name": "Diese Woche"
+      },
+      "watched_month": {
+        "name": "Dieser Monat"
+      },
+      "watched_year": {
+        "name": "Dieses Jahr"
+      },
+      "status": {
+        "name": "Status"
+      },
+      "parent_watched": {
+        "name": "Elternzeit heute"
+      },
+      "parent_watched_week": {
+        "name": "Elternzeit Woche"
+      },
+      "parent_watched_month": {
+        "name": "Elternzeit Monat"
+      },
+      "parent_watched_year": {
+        "name": "Elternzeit Jahr"
+      },
+      "last_check": {
+        "name": "Letzte Prüfung"
+      }
     },
     "binary_sensor": {
-      "tv_active": {"name": "Fernseher aktiv"}
+      "tv_active": {
+        "name": "Fernseher aktiv"
+      }
     },
     "switch": {
-      "system_active": {"name": "System aktiv"},
-      "holiday": {"name": "Ferien heute"},
-      "parent_override": {"name": "Elternzeit"},
-      "meal_pause": {"name": "Essenspause"},
-      "parent_autooff_enabled": {"name": "Elternzeit Auto-Aus"}
+      "system_active": {
+        "name": "System aktiv"
+      },
+      "holiday": {
+        "name": "Ferien heute"
+      },
+      "parent_override": {
+        "name": "Elternzeit"
+      },
+      "meal_pause": {
+        "name": "Essenspause"
+      },
+      "parent_autooff_enabled": {
+        "name": "Elternzeit Auto-Aus"
+      }
     },
     "number": {
-      "budget_werktag": {"name": "Budget Werktag"},
-      "budget_wochenende": {"name": "Budget Wochenende"},
-      "budget_ferien": {"name": "Budget Ferien"}
+      "budget_werktag": {
+        "name": "Budget Werktag"
+      },
+      "budget_wochenende": {
+        "name": "Budget Wochenende"
+      },
+      "budget_ferien": {
+        "name": "Budget Ferien"
+      }
     },
     "time": {
-      "werktag_start": {"name": "Werktag Start"},
-      "werktag_ende": {"name": "Werktag Ende"},
-      "wochenende_start": {"name": "Wochenende Start"},
-      "wochenende_ende": {"name": "Wochenende Ende"},
-      "ferien_start": {"name": "Ferien Start"},
-      "ferien_ende": {"name": "Ferien Ende"},
-      "parent_autooff_time": {"name": "Elternzeit Auto-Aus Zeit"}
+      "werktag_start": {
+        "name": "Werktag Start"
+      },
+      "werktag_ende": {
+        "name": "Werktag Ende"
+      },
+      "wochenende_start": {
+        "name": "Wochenende Start"
+      },
+      "wochenende_ende": {
+        "name": "Wochenende Ende"
+      },
+      "ferien_start": {
+        "name": "Ferien Start"
+      },
+      "ferien_ende": {
+        "name": "Ferien Ende"
+      },
+      "parent_autooff_time": {
+        "name": "Elternzeit Auto-Aus Zeit"
+      }
     },
     "select": {
-      "profile": {"name": "Profil"}
+      "profile": {
+        "name": "Profil"
+      }
     },
     "text": {
-      "pin": {"name": "PIN"},
-      "url_active": {"name": "Hook aktiv"},
-      "url_inactive": {"name": "Hook inaktiv"},
-      "parent_url_active": {"name": "Elternmodus Hook aktiv"},
-      "parent_url_inactive": {"name": "Elternmodus Hook inaktiv"}
+      "pin": {
+        "name": "PIN"
+      },
+      "url_active": {
+        "name": "Hook aktiv"
+      },
+      "url_inactive": {
+        "name": "Hook inaktiv"
+      },
+      "parent_url_active": {
+        "name": "Elternmodus Hook aktiv"
+      },
+      "parent_url_inactive": {
+        "name": "Elternmodus Hook inaktiv"
+      }
     },
     "button": {
-      "make_dashboard": {"name": "Dashboard-Vorlage erstellen"},
-      "diagnose": {"name": "Diagnose"},
-      "video_test": {"name": "Video testen"},
-      "reset_stats_all": {"name": "Statistik ALLE zurücksetzen"},
-      "reset_stats": {"name": "Statistik zurücksetzen"}
+      "make_dashboard": {
+        "name": "Dashboard-Vorlage erstellen"
+      },
+      "diagnose": {
+        "name": "Diagnose"
+      },
+      "video_test": {
+        "name": "Ansage testen: Zeit abgelaufen"
+      },
+      "reset_stats_all": {
+        "name": "Statistik ALLE zurücksetzen"
+      },
+      "reset_stats": {
+        "name": "Statistik zurücksetzen"
+      },
+      "video_test_limit": {
+        "name": "Ansage testen: Zeitfenster-Ende"
+      },
+      "video_test_notimer": {
+        "name": "Ansage testen: kein Timer"
+      }
     }
   },
   "services": {
@@ -194,38 +334,62 @@
       "name": "Timer starten (Play)",
       "description": "Startet/setzt den Timer eines Kindes fort. Nur möglich, wenn Restzeit > 0 und innerhalb des erlaubten Zeitfensters. PIN noetig, falls für das Kind gesetzt.",
       "fields": {
-        "child": {"name": "Kind", "description": "Kind-ID, z.B. kind_1"},
-        "pin": {"name": "PIN", "description": "PIN des Kindes (nur falls gesetzt)."}
+        "child": {
+          "name": "Kind",
+          "description": "Kind-ID, z.B. kind_1"
+        },
+        "pin": {
+          "name": "PIN",
+          "description": "PIN des Kindes (nur falls gesetzt)."
+        }
       }
     },
     "pause_timer": {
       "name": "Timer pausieren (Pause)",
       "description": "Pausiert den laufenden Timer. Die Restzeit bleibt erhalten.",
       "fields": {
-        "child": {"name": "Kind", "description": "Kind-ID, z.B. kind_1"}
+        "child": {
+          "name": "Kind",
+          "description": "Kind-ID, z.B. kind_1"
+        }
       }
     },
     "stop_timer": {
       "name": "Timer stoppen (Stop)",
       "description": "Setzt die Restzeit auf 0. Das Kind hat danach für heute keine Zeit mehr und kann NICHT erneut starten.",
       "fields": {
-        "child": {"name": "Kind", "description": "Kind-ID, z.B. kind_1"}
+        "child": {
+          "name": "Kind",
+          "description": "Kind-ID, z.B. kind_1"
+        }
       }
     },
     "add_time": {
       "name": "Zeit gutschreiben (Eltern)",
       "description": "Fuegt EINEM Kind oder ALLEN Kindern Minuten hinzu. Feld 'Kind' leer lassen oder 'alle' eintragen = alle Kinder.",
       "fields": {
-        "child": {"name": "Kind", "description": "Kind-ID (z.B. kind_1). Leer oder 'alle' = alle Kinder."},
-        "minutes": {"name": "Minuten", "description": "Hinzuzufuegende Minuten."}
+        "child": {
+          "name": "Kind",
+          "description": "Kind-ID (z.B. kind_1). Leer oder 'alle' = alle Kinder."
+        },
+        "minutes": {
+          "name": "Minuten",
+          "description": "Hinzuzufuegende Minuten."
+        }
       }
     },
     "set_pin": {
       "name": "PIN setzen/löschen (Eltern)",
       "description": "Setzt den PIN eines Kindes neu (leer lassen = PIN entfernen).",
       "fields": {
-        "child": {"name": "Kind", "description": "Kind-ID, z.B. kind_1"},
-        "pin": {"name": "Neuer PIN", "description": "Leer lassen, um den PIN zu entfernen."}
+        "child": {
+          "name": "Kind",
+          "description": "Kind-ID, z.B. kind_1"
+        },
+        "pin": {
+          "name": "Neuer PIN",
+          "description": "Leer lassen, um den PIN zu entfernen."
+        }
       }
     },
     "apply_budgets_now": {
@@ -236,32 +400,56 @@
       "name": "Dashboard-Vorlage erstellen",
       "description": "Erzeugt eine fertige Dashboard-Vorlage (Eltern- + Kinder-Ansicht) als kopierbare Benachrichtigung. Ohne Angaben wird die eingestellte Anzahl Kinder/Profile verwendet.",
       "fields": {
-        "children": {"name": "Anzahl Kinder", "description": "Optional - sonst wie eingerichtet."},
-        "profiles": {"name": "Anzahl Profile", "description": "Optional - sonst wie eingerichtet."}
+        "children": {
+          "name": "Anzahl Kinder",
+          "description": "Optional - sonst wie eingerichtet."
+        },
+        "profiles": {
+          "name": "Anzahl Profile",
+          "description": "Optional - sonst wie eingerichtet."
+        }
       }
     },
     "play_media": {
       "name": "Video/Bild auf den Fernseher streamen",
       "description": "Spielt eine Medien-URL (mp4, Bild, Audio) auf der als Fernseher gewählten media_player-Entity ab.",
       "fields": {
-        "media": {"name": "Medien-Datei (auswählen)", "description": "Im Media-Browser eine Datei auswählen."},
-        "url": {"name": "oder Medien-URL", "description": "Alternativ direkte URL/Pfad (http/https oder media-source://...)."},
-        "content_type": {"name": "Medientyp", "description": "Optional: video, image oder music (sonst automatisch)."}
+        "media": {
+          "name": "Medien-Datei (auswählen)",
+          "description": "Im Media-Browser eine Datei auswählen."
+        },
+        "url": {
+          "name": "oder Medien-URL",
+          "description": "Alternativ direkte URL/Pfad (http/https oder media-source://...)."
+        },
+        "content_type": {
+          "name": "Medientyp",
+          "description": "Optional: video, image oder music (sonst automatisch)."
+        }
       }
     },
     "test_video": {
       "name": "Video testen",
       "description": "Spielt eines der konfigurierten Videos sofort zum Testen ab.",
       "fields": {
-        "which": {"name": "Welches Video", "description": "timeup (Abschied), limit (Zeitfenster-Ende) oder notimer (Hinweis)."}
+        "which": {
+          "name": "Welches Video",
+          "description": "timeup (Abschied), limit (Zeitfenster-Ende) oder notimer (Hinweis)."
+        }
       }
     },
     "reset_statistics": {
       "name": "Statistik zurücksetzen",
       "description": "Setzt die geschaute Zeit (Statistik) zurück - für EIN Kind oder ALLE. Feld 'Kind' leer lassen oder 'alle' eintragen = alle Kinder.",
       "fields": {
-        "child": {"name": "Kind", "description": "Kind-ID (z.B. kind_1). Leer oder 'alle' = alle Kinder."},
-        "scope": {"name": "Umfang", "description": "Welche Zeiträume zurückgesetzt werden (Standard: alles)."}
+        "child": {
+          "name": "Kind",
+          "description": "Kind-ID (z.B. kind_1). Leer oder 'alle' = alle Kinder."
+        },
+        "scope": {
+          "name": "Umfang",
+          "description": "Welche Zeiträume zurückgesetzt werden (Standard: alles)."
+        }
       }
     }
   }

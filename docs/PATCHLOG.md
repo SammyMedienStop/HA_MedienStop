@@ -3,6 +3,96 @@
 Chronologie der wichtigsten Fixes mit **Symptom → Ursache → Lösung**. Ergänzt die
 nutzerseitige `CHANGELOG.md` um das „Warum".
 
+## [2.5.0] Alexa konnte keine eigenen Audiodateien abspielen
+- **Symptom:** Ein als Video-Player eingetragenes Echo blieb bei Datei-Ansagen stumm;
+  der Media-Browser meldete „Mediaplayer unterstützt kein Auswählen aus Medienquellen".
+- **Ursache:** Zwei unabhängige Grenzen. (a) Die `alexa_media`-Integration
+  implementiert kein `browse_media` → daher die Media-Browser-Meldung. (b) Amazon
+  erlaubt eigene Audios **nur** über einen SSML-`<audio>`-Tag; `media_player.play_media`
+  mit beliebigen URLs funktioniert bei Alexa nicht (Issue alandtse/alexa_media_player
+  #3163, geschlossen als „amazonissue / not planned"). Zusätzlich prüft Amazon das
+  Format streng: MPEG **Version 2**, **48 kbps** CBR, **16000/22050/24000 Hz**, ≤ 240 s,
+  erreichbar über **öffentliches HTTPS**. Die mitgelieferten MP3 waren MPEG1 / ~86 kbps
+  VBR / 48000 Hz und verletzten damit drei von vier Vorgaben — Amazon lehnt sie
+  **ohne jede Fehlermeldung** ab.
+- **Lösung:** `_speak_audio_url()` sendet `<audio src='…'/>` als `notify.alexa_media`
+  mit `type: "tts"` (reiner Text nutzt weiterhin `announce`). `_target_is_alexa()`
+  erkennt das Ziel über die Entity-Registry und lehnt Videos/`media-source://` mit
+  erklärender Meldung ab, statt still zu scheitern. Die MP3 in `media/` wurden
+  in-place konvertiert (`-b:a 48k -ar 24000 -ac 1`, ohne ID3/Xing-Header) und werden
+  über `raw.githubusercontent.com` als **Vorlagen** angeboten — dadurch braucht ein
+  Endnutzer für die mitgelieferten Ansagen weder Nabu Casa noch das Kopieren von
+  Dateien. Für eigene Dateien ist `<config>/www/` der einzige gangbare Ort, weil
+  `/local/…` **ohne** Auth-Token ausgeliefert wird; `media_source`-URLs scheitern,
+  weil Amazons Abrufer kein Token besitzt.
+
+## [2.5.0] Options-Flow: Datenverluste und starrer Durchlauf
+- **Symptom:** Für eine kleine Änderung an einer Ansage musste man vier Formulare
+  durchklicken; ein einmal gesetztes Video ließ sich nie wieder entfernen.
+- **Ursachen (mehrere, alle im selben Code):**
+  * `async_step_init` baute `self._new` von Null auf und `async_update_entry(data=…)`
+    **ersetzte** `entry.data` komplett → alles musste unterwegs neu eingesammelt werden.
+  * `_collect_videos` hatte einen Rückfall `elif cur.get("id")` — eine Einbahnstraße:
+    leere Felder stellten den alten Wert wieder her, Löschen war unmöglich.
+  * `int(user_input.get(…, 10) or 10)` machte aus einer **0** eine 10 (identisch in
+    `__init__.py`), eine Verzögerung von 0 s war nicht einstellbar.
+  * `if entry:` verwarf Einträge, die nur eine Verzögerung hatten.
+  * `_collect_names`/`_collect_visibility` iterierten nur `1..num_children` → beim
+    Verringern der Kinderzahl gingen Namen und Tab-Zuordnungen unwiderruflich verloren.
+  * `async_update_entry` + `async_create_entry(data={})` lösten **zwei** Reloads aus.
+- **Lösung:** `async_show_menu` als Einstieg, jeder Bereich speichert selbst per
+  Merge (`{**entry.data, **changes}`); Quellen-Modell (`src`) statt implizitem
+  Vorrang; `as_int()` statt `or default`; Namen/Tab-Zuordnungen werden gemerged;
+  `async_create_entry(data=dict(entry.options))` vermeidet den zweiten Reload.
+  Rückwärtskompatibilität über `normalize_announce()` **ohne** Migration — die alte
+  Form wird beim Lesen verstanden, die neue erst beim nächsten Speichern geschrieben.
+  Der Media-Browser bleibt die einzige Ausnahme vom „leer = gelöscht"-Prinzip: er
+  startet technisch bedingt immer leer, daher bedeutet leer dort „bisherige behalten".
+
+## [2.4.1] Prüfung starb nach dem Verstellen der Auto-Aus-Zeit (Kern-Bug)
+- **Symptom:** Nach einiger Zeit reagierte die Integration nicht mehr — Fernseher
+  wurde nicht abgeschaltet, Sensor „Letzte Prüfung" fror ein, Hooks feuerten nicht.
+- **Ursache:** `_schedule_autooff()` meldete neben `_unsub_autooff` auch
+  `_unsub_enforce` (15-s-Tick), `_unsub_tvstate` (TV-Listener) und `_unsub_off` ab —
+  und registrierte sie **nie wieder**. Der Block war erkennbar aus `shutdown()`
+  kopiert. Beim Start blieb das folgenlos, weil `start_clock()` `_schedule_autooff()`
+  **vor** der Registrierung aufruft; aber jeder spätere Aufruf (Auto-Aus-Schalter,
+  Auto-Aus-Zeit ändern, Restore der Zeit-Entity) legte die Hintergrundprüfung
+  dauerhaft lahm. Zusätzlich verfälschte `self.last_reset = now().date()` die
+  Wochen-/Monats-Rollover-Erkennung in `_midnight`.
+- **Lösung:** `_schedule_autooff()` fasst nur noch den Auto-Aus-Zeitgeber an.
+  Stub-Test: `start_clock()` → `set_autooff_time(...)` → `_unsub_enforce` muss
+  identisch bleiben.
+
+## [2.4.1] „System aktiv = aus" wirkte nicht
+- **Symptom:** Trotz ausgeschaltetem Schalter wurde der Fernseher weiter abgeschaltet.
+- **Ursache:** `_goodbye_then_off` plant die Abschaltung via `async_call_later` bis zu
+  600 s im Voraus. `_do_off()` (und `_set_tv()` selbst) prüften `system_active` nicht,
+  und `_cancel_off()` lag in `_enforce_tick`/`_loop` **hinter** den Early-Returns —
+  eine schwebende Abschaltung wurde bei deaktiviertem System also nie abgebrochen.
+- **Lösung:** Zentrales Sicherheitsnetz in `_set_tv()` (beide Richtungen), expliziter
+  Guard in `_do_off()`, `_cancel_off()` vor die Early-Returns gezogen, und
+  `switch.py::_apply` bricht beim Ausschalten sofort ab. **Wichtig beim Weiterbauen:**
+  die Zählblöcke (`_scan(decrement=True)`, `parent_watched`) müssen hinter dem
+  Early-Return in `_loop` bleiben — sonst liefe die Statistik im Not-Aus weiter.
+
+## [2.4.1] Hooks feuerten nie (und meldeten keinen Fehler)
+- **Symptom:** Die hinterlegten Hook-URLs lösten nichts aus; im Protokoll stand nichts.
+- **Ursache:** `_fire_webhook` benutzte **HTTP GET**. Home-Assistant-Webhook-Trigger
+  akzeptieren per Default nur POST/PUT und antworten auf GET mit **405**. Der
+  Antwort-Status wurde nie geprüft (keine Exception → `except` griff nicht), und der
+  einzige Erfolgs-Log lief auf **INFO**, das bei diesem Nutzer nicht geschrieben wird
+  (siehe Gotcha weiter unten). Ergebnis: vollkommen stille Fehlfunktion. Zusätzlich
+  wurde die Response nie freigegeben (kein `async with`) → Connection-Leak.
+- **Lösung:** POST als Primärweg, GET nur als Rückfall bei 405/501, Status auswerten,
+  Erfolg **und** Fehler auf WARNING loggen, `async with` verwenden.
+- **Nachgelagert:** `_parent_was_active`/`_was_active` überleben keinen Neustart,
+  `parent_override` per Restore aber schon → nach jedem Neustart feuerte fälschlich
+  `parent_url_active`. Gelöst über `_webhooks_primed`: der erste Lauf gleicht die
+  Merker nur ab, ohne zu feuern. **Offen:** `child["state"]` wird weiterhin nicht
+  persistiert, ein vor dem Neustart laufendes Kind wird also nicht mit „inaktiv"
+  quittiert (Kandidat für `RestoreSensor` in einer späteren Version).
+
 ## [2.0.2] Zeitfenster-Ende zeigte falsches Video
 - **Symptom:** Bei Erreichen der End-Uhrzeit (z. B. 20 Uhr) kam das „kein Timer"-
   Video (notimer) statt des „Schlafenszeit"-Videos (limit).

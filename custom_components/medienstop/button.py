@@ -28,7 +28,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry,
                             async_add_entities: AddEntitiesCallback) -> None:
     manager = hass.data[DOMAIN][entry.entry_id]
     entities = [GenerateDashboardButton(manager), DiagnoseButton(manager),
-                VideoTestButton(manager), ResetStatsAllButton(manager)]
+                VideoTestButton(manager, "timeup"),
+                VideoTestButton(manager, "limit"),
+                VideoTestButton(manager, "notimer"),
+                ResetStatsAllButton(manager)]
     # Pro Kind ein eigener "Statistik zurücksetzen"-Knopf.
     for cid in manager.children:
         entities.append(ResetStatsChildButton(manager, cid))
@@ -162,20 +165,26 @@ class DiagnoseButton(MedienStopEntity, ButtonEntity):
 
 
 class VideoTestButton(MedienStopEntity, ButtonEntity):
-    """Spielt das Abschiedsvideo sofort ab (Test) - ohne auf Zeitablauf zu warten."""
+    """Spielt eine Ansage sofort ab (Test) - ohne auf Zeitablauf zu warten.
 
-    _attr_translation_key = "video_test"
+    Der Knopf fuer "timeup" behaelt aus Bestandsschutz seine alte unique_id
+    (`_video_test`), damit bestehende Dashboards/Automatisierungen weiterlaufen.
+    """
+
     _attr_icon = "mdi:movie-open-play"
 
-    def __init__(self, manager) -> None:
+    def __init__(self, manager, which: str = "timeup") -> None:
         super().__init__(manager)
-        self._attr_unique_id = f"{self._entry_id}_video_test"
+        self._which = which
+        suffix = "video_test" if which == "timeup" else f"video_test_{which}"
+        self._attr_translation_key = suffix
+        self._attr_unique_id = f"{self._entry_id}_{suffix}"
         self._attr_device_info = hub_device(self._entry_id)
 
     async def async_press(self) -> None:
         from .const import DOMAIN, SERVICE_TEST_VIDEO
         await self.hass.services.async_call(
-            DOMAIN, SERVICE_TEST_VIDEO, {"which": "timeup"}, blocking=False)
+            DOMAIN, SERVICE_TEST_VIDEO, {"which": self._which}, blocking=False)
 
 
 class _ResetConfirmButton(MedienStopEntity, ButtonEntity):

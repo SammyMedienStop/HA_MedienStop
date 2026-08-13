@@ -1,23 +1,125 @@
-# Videos für MedienStop.de
+# Ansagen für MedienStop.de
 
-Diese drei Videos werden vor dem Ausschalten des Fernsehers eingeblendet.
-Ordne sie in *MedienStop.de → Konfigurieren → Videos* zu:
+Diese Dateien werden vor dem Ausschalten des Fernsehers abgespielt. Es gibt drei
+Fälle, jeweils als **Video** (`.mp4`, für Fernseher/Chromecast) und als **Audio**
+(`.mp3`, zusätzlich **Alexa/Echo-tauglich**):
 
-| Datei | Fall (Feld im Setup) | Wann |
+| Fall (Feld im Setup) | Wann | Video | Audio |
+|---|---|---|---|
+| **Zeit/Budget abgelaufen** (timeup) | Tages-Guthaben des Kindes ist aufgebraucht | `timeup_fernsehzeit-vorbei.mp4` | `timeup_fernsehzeit-vorbei.mp3` |
+| **Zeitfenster-Ende** (limit) | erlaubte Uhrzeit erreicht, z. B. 20 Uhr | `limit_schlaft-gut.mp4` | `limit_schlaft-gut.mp3` |
+| **Kein Timer / außerhalb Zeit** (notimer) | TV ohne aktiven Timer eingeschaltet | `notimer_keine-tv-zeit.mp4` | `notimer_keine-tv-zeit.mp3` |
+
+> [!TIP]
+> **Du musst diese Dateien nicht selbst herunterladen.** In *MedienStop.de →
+> Konfigurieren* stehen sie als fertige **Vorlagen** im Auswahlfeld – sie werden
+> direkt aus diesem GitHub-Repository geladen. Nur wer **eigene** Ansagen nutzen
+> will, braucht die Anleitung weiter unten.
+
+---
+
+## 🔊 Eigene Audios für Alexa/Echo vorbereiten
+
+Ein Echo kann **nicht** einfach jede beliebige MP3 abspielen. Amazon holt die Datei
+selbst aus dem Internet und prüft dabei **streng** ihr Format. Passt etwas nicht,
+bleibt der Lautsprecher **stumm – ohne jede Fehlermeldung** in Home Assistant. Genau
+deshalb müssen eigene Dateien konvertiert werden.
+
+### Amazons Anforderungen (alle Punkte müssen stimmen)
+
+| Anforderung | Wert | Warum |
 |---|---|---|
-| `timeup_fernsehzeit-vorbei.mp4` | **Zeit/Budget abgelaufen** (timeup) | Tages-Guthaben des Kindes ist aufgebraucht |
-| `limit_schlaft-gut.mp4` | **Zeitfenster-Ende** (limit) | erlaubte Uhrzeit erreicht, z. B. 20 Uhr (Schlafenszeit) |
-| `notimer_keine-tv-zeit.mp4` | **Kein Timer / außerhalb Zeit** (notimer) | TV wird ohne aktiven Timer / außerhalb der Zeit eingeschaltet |
+| **Dateiformat** | MP3, **MPEG Version 2** | **WAV, OGG, M4A und FLAC funktionieren nicht.** MPEG Version 2 ergibt sich automatisch aus der Samplerate (siehe unten). |
+| **Bitrate** | genau **48 kbps**, konstant (CBR) | Variable Bitrate (VBR) wird abgelehnt. |
+| **Samplerate** | **16000, 22050 oder 24000 Hz** | Nur diese drei. Üblich sind 44100/48000 Hz – die gehen **nicht**. |
+| **Länge** | höchstens **240 Sekunden** | Pro Ansage. |
+| **Erreichbarkeit** | öffentliches **HTTPS** mit gültigem Zertifikat | Amazons Server lädt die Datei selbst. Selbstsignierte Zertifikate werden abgelehnt. |
 
-## Installieren (beim jeweiligen Nutzer)
-1. Die drei Dateien in den Home-Assistant-Ordner **`config/media/`** kopieren
-   (z. B. per Samba, „File editor" oder *Medien → Hochladen*).
-2. *Einstellungen → Geräte & Dienste → MedienStop.de → **Konfigurieren** → Videos*
-   öffnen und je Fall die passende Datei über den **Media-Browser** auswählen
-   (oder eine URL angeben). Pro Video lässt sich eine eigene Abschalt-Verzögerung
-   (Sekunden) einstellen.
+### Konvertieren mit ffmpeg
 
-## Wichtig
-Damit die Videos **auf dem Fernseher** laufen (und nicht im TV-Browser), sollte
-als **Video-Player** ein streamfähiger `media_player` gewählt sein
-(Chromecast/Cast oder DLNA Digital Media Renderer) – siehe Haupt-README.
+[ffmpeg](https://ffmpeg.org/) ist kostenlos und für Windows, macOS und Linux
+verfügbar. Ein Befehl je Datei:
+
+```bash
+ffmpeg -i meine-ansage.mp3 -map_metadata -1 -id3v2_version 0 \
+       -codec:a libmp3lame -b:a 48k -ar 24000 -ac 1 -write_xing 0 \
+       fertig.mp3
+```
+
+Was die einzelnen Angaben bewirken:
+
+| Angabe | Bedeutung |
+|---|---|
+| `-ar 24000` | Samplerate 24 kHz. **Dadurch entsteht automatisch MPEG Version 2** – LAME schaltet bei 16/22,05/24 kHz selbst um. |
+| `-b:a 48k` | konstante Bitrate von 48 kbps. |
+| `-ac 1` | Mono. Bei 48 kbps klingt Stereo matschig; Amazons eigene Beispiele sind mono. |
+| `-map_metadata -1` und `-id3v2_version 0` | entfernt alle Titel-/Cover-Informationen (ID3). Ein ID3-Block vor dem ersten Ton ist eine bekannte Fehlerquelle beim Abruf durch Amazon. |
+| `-write_xing 0` | schreibt keinen zusätzlichen Info-Block an den Dateianfang. |
+
+Läuft es rückwärts? Also aus einem **Video** eine Ansage machen: derselbe Befehl
+funktioniert auch mit einer `.mp4` als Eingabedatei – die Tonspur wird übernommen.
+
+### Ergebnis prüfen
+
+```bash
+ffprobe -v error -show_entries stream=sample_rate,channels,bit_rate \
+        -show_entries format=duration -of default=noprint_wrappers=1 fertig.mp3
+```
+
+Erwartet: `sample_rate=24000`, `channels=1`, `bit_rate=48000`, `duration` ≤ 240.
+
+> [!NOTE]
+> Die mitgelieferten `.mp3` in diesem Ordner sind bereits exakt so konvertiert
+> (MPEG 2 · 48 kbps · 24000 Hz · Mono · ohne ID3) und damit sofort Alexa-tauglich.
+
+---
+
+## 📍 Wo muss die eigene Datei liegen?
+
+Amazons Server lädt die Datei **selbst aus dem Internet**. Sie muss deshalb von
+außen über **HTTPS** erreichbar sein – eine Datei, die nur im Heimnetz liegt,
+funktioniert nicht.
+
+**Der richtige Ort ist der Ordner `www` in deiner Home-Assistant-Konfiguration:**
+
+1. Datei nach `config/www/` kopieren (Ordner ggf. anlegen), z. B.
+   `config/www/meine-ansage.mp3`.
+2. Sie ist dann unter `https://<deine-ha-adresse>/local/meine-ansage.mp3` abrufbar.
+3. In *MedienStop.de → Konfigurieren* die Quelle **„Eigene Datei aus www/"** wählen –
+   die vollständige Adresse wird automatisch gebildet.
+
+Voraussetzung ist ein **öffentlich erreichbarer HTTPS-Zugang** mit gültigem
+Zertifikat, z. B. **Nabu Casa** (Home Assistant Cloud) oder eine eigene Domain mit
+Let's-Encrypt-Zertifikat.
+
+> [!WARNING]
+> **Der Media-Browser funktioniert für Alexa nicht.** Dateien aus `config/media/`
+> werden nur mit einem Zugangs-Token ausgeliefert, das Amazons Server nicht hat.
+> Für Alexa führt der Weg deshalb ausschließlich über `config/www/` (oder eine
+> eigene öffentliche URL). Für **Fernseher und Chromecast** ist der Media-Browser
+> weiterhin der richtige und bequemste Weg.
+
+> [!CAUTION]
+> Alles in `config/www/` ist **ohne Passwort** aus dem Internet abrufbar, sobald
+> jemand die Adresse kennt. Dort also nur Dateien ablegen, die unbedenklich sind –
+> Sprachansagen für Kinder sind das typischerweise.
+
+---
+
+## 🖥️ Für Fernseher und Chromecast
+
+Damit die **Videos** auf dem Fernseher laufen (und nicht im TV-Browser landen),
+sollte als **Video-Player** ein streamfähiger `media_player` gewählt sein –
+Chromecast/Cast oder ein DLNA Digital Media Renderer. Details im
+[Haupt-README](../README.md).
+
+---
+
+## ⚠️ Für Entwickler: Dateinamen nicht ändern
+
+Die Dateinamen und Pfade in diesem Ordner sind in
+`custom_components/medienstop/const.py` fest verdrahtet und werden über
+`raw.githubusercontent.com` **direkt von Amazons Servern abgerufen**. Eine Umbenennung
+oder Verschiebung bricht die Vorlagen-Auswahl in allen bestehenden Installationen.
+Die URLs zeigen bewusst auf den Branch `main`, damit spätere Korrekturen an den
+Ansagen auch ältere Installationen erreichen.

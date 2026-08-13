@@ -86,6 +86,128 @@ ATTR_SCOPE = "scope"      # Reset-Umfang: all/today/week/month/year
 SIGNAL_UPDATE = "medienstop_update_{entry_id}"
 
 
+# --- Ansagen vor dem Abschalten ---------------------------------------------
+# Drei Gruende, je eine eigene Quelle + Verzoegerung.
+ANNOUNCE_KEYS: list[str] = ["timeup", "limit", "notimer"]
+
+# Quellen-Kennungen. Die sechs Vorlagen (siehe BUNDLED_MEDIA) sind eigene
+# Quellen-Werte, damit im Konfigurations-Dialog EIN Auswahlfeld genuegt.
+SRC_NONE = "none"       # keine Ansage -> sofort aus
+SRC_MEDIA = "media"     # eigene Datei aus dem Media-Browser (media-source://)
+SRC_WWW = "www"         # eigene Datei aus <config>/www/ (oeffentlich per HTTPS)
+SRC_URL = "url"         # eigene, frei eingegebene URL
+SRC_TTS = "tts"         # Text-Ansage (Alexa liest vor)
+SRC_SOUND = "sound"     # eingebauter Alexa-Klang (Amazon-Soundbibliothek)
+
+# Mitgelieferte Ansagen. Sie liegen oeffentlich im GitHub-Repo und werden von
+# dort geladen -> der Nutzer muss NICHTS herunterladen oder kopieren.
+# Bewusst auf Branch "main" (nicht auf einen Tag), damit spaetere Korrekturen an
+# den Dateien auch bestehende Installationen erreichen.
+# ACHTUNG: Dateinamen nie aendern - Amazons Server rufen genau diese URLs ab.
+_RAW_MEDIA = "https://raw.githubusercontent.com/SammyMedienStop/HA_MedienStop/main/media"
+
+# Quellen-Wert -> (URL, media_content_type)
+# Die .mp3 sind Alexa-tauglich konvertiert (MPEG2 / 48 kbps / 24000 Hz / mono),
+# die .mp4 sind fuer Fernseher und Chromecast gedacht.
+BUNDLED_MEDIA: dict[str, tuple[str, str]] = {
+    "video_timeup":  (f"{_RAW_MEDIA}/timeup_fernsehzeit-vorbei.mp4", "video"),
+    "video_limit":   (f"{_RAW_MEDIA}/limit_schlaft-gut.mp4",         "video"),
+    "video_notimer": (f"{_RAW_MEDIA}/notimer_keine-tv-zeit.mp4",     "video"),
+    "audio_timeup":  (f"{_RAW_MEDIA}/timeup_fernsehzeit-vorbei.mp3", "music"),
+    "audio_limit":   (f"{_RAW_MEDIA}/limit_schlaft-gut.mp3",         "music"),
+    "audio_notimer": (f"{_RAW_MEDIA}/notimer_keine-tv-zeit.mp3",     "music"),
+}
+
+# Reihenfolge im Auswahlfeld: erst die Vorlagen, dann eigene Quellen.
+ANNOUNCE_SOURCES: list[str] = list(BUNDLED_MEDIA) + [
+    SRC_MEDIA, SRC_WWW, SRC_URL, SRC_TTS, SRC_SOUND, SRC_NONE,
+]
+
+# Passende Vorlage je Grund - wird als Vorschlag angeboten, wenn fuer einen
+# Grund noch nichts eingerichtet ist.
+DEFAULT_BUNDLED: dict[str, str] = {
+    "timeup": "video_timeup",
+    "limit": "video_limit",
+    "notimer": "video_notimer",
+}
+
+# Kleine Auswahl aus Amazons Klangbibliothek. Im Dialog ist freie Eingabe
+# erlaubt, jede Kennung aus der ASK Sound Library funktioniert:
+# https://developer.amazon.com/en-US/docs/alexa/custom-skills/ask-soundlibrary.html
+ALEXA_SOUNDS: list[str] = [
+    "bell_02",
+    "amzn_sfx_doorbell_chime_01",
+    "amzn_sfx_doorbell_chime_02",
+    "amzn_sfx_scifi_alarm_01",
+    "air_horn_03",
+    "clock_01",
+]
+
+DEFAULT_DELAY = 10          # Sekunden bis zum Abschalten, nachdem die Ansage lief
+MAX_DELAY = 600
+
+
+def as_int(value, default: int) -> int:
+    """Wie int(), aber None/'' -> default und eine echte 0 bleibt 0.
+
+    Frueher stand hier `int(value or default)` - dadurch wurde aus einer
+    eingestellten Verzoegerung von 0 Sekunden stillschweigend wieder 10.
+    """
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_announce(cfg: dict | None) -> dict:
+    """Bringt einen gespeicherten Ansage-Eintrag auf die aktuelle Form.
+
+    Versteht weiterhin die alte Form aus Version <= 2.4.x
+    (`{id, type, delay, tts}`) und bildet deren Vorrang-Verhalten exakt ab:
+    eine gesetzte Text-Ansage schlug dort ein gesetztes Video.
+    Es wird NICHTS migriert/geschrieben - die Umsetzung passiert beim Lesen.
+    """
+    cfg = dict(cfg or {})
+    delay = as_int(cfg.get("delay"), DEFAULT_DELAY)
+
+    src = cfg.get("src")
+    if src:
+        out = {"src": src, "delay": delay}
+        for key in ("id", "type", "file", "tts", "sound"):
+            if cfg.get(key):
+                out[key] = cfg[key]
+        return out
+
+    # --- Altbestand ---------------------------------------------------------
+    if cfg.get("tts"):
+        return {"src": SRC_TTS, "tts": cfg["tts"], "delay": delay}
+    old_id = cfg.get("id") or ""
+    if old_id.startswith("media-source"):
+        return {"src": SRC_MEDIA, "id": old_id,
+                "type": cfg.get("type") or None, "delay": delay}
+    if old_id:
+        return {"src": SRC_URL, "id": old_id,
+                "type": cfg.get("type") or None, "delay": delay}
+    return {"src": SRC_NONE, "delay": delay}
+
+
+def announce_media(cfg: dict) -> tuple[str, str | None]:
+    """Liefert (URL/Medien-ID, content_type) fuer eine dateibasierte Quelle.
+
+    Fuer `www` kann hier keine Adresse gebaut werden (dafuer wird die
+    oeffentliche HTTPS-Basis von Home Assistant gebraucht) -> der Manager
+    ergaenzt sie zur Laufzeit.
+    """
+    src = cfg.get("src")
+    if src in BUNDLED_MEDIA:
+        return BUNDLED_MEDIA[src]
+    if src in (SRC_MEDIA, SRC_URL):
+        return cfg.get("id", ""), cfg.get("type")
+    return "", None
+
+
 def child_id(index: int) -> str:
     return f"kind_{index}"
 

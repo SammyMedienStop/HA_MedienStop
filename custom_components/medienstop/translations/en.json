@@ -60,38 +60,50 @@
     "step": {
       "init": {
         "title": "MedienStop.de – Settings",
-        "description": "Change the number of children/profiles and the dashboard variant. Reloads afterwards.",
+        "description": "What would you like to change? Each section is saved on its own; all other settings stay untouched.",
+        "menu_options": {
+          "basis": "Basics (children, profiles, TV, dashboard)",
+          "names": "Names of children and profiles",
+          "visibility": "Visibility – who sees which tab",
+          "ansage_timeup": "Announcement: time/budget used up",
+          "ansage_limit": "Announcement: end of time window (bedtime)",
+          "ansage_notimer": "Announcement: no timer / outside allowed time"
+        }
+      },
+      "basis": {
+        "title": "MedienStop.de – Basics",
+        "description": "Number of children/profiles, TV and dashboard variant. Clearing a field removes that selection.",
         "data": {
           "num_children": "Number of children (1-9)",
           "num_profiles": "Number of time profiles (1-5)",
           "kid_dashboard": "Kids dashboard",
           "tv_entity": "TV entity (optional)",
-          "video_player": "Video player for streaming (Cast/Chromecast, optional)"
+          "video_player": "Media player for streaming (Cast/Chromecast or Alexa, optional)"
         }
       },
       "names": {
         "title": "MedienStop.de – Names",
-        "description": "Set names for children and profiles (editable later).",
+        "description": "Set names for children and profiles (changeable later).",
         "data": {
-          "name_kind_1": "Name child 1",
-          "name_kind_2": "Name child 2",
-          "name_kind_3": "Name child 3",
-          "name_kind_4": "Name child 4",
-          "name_kind_5": "Name child 5",
-          "name_kind_6": "Name child 6",
-          "name_kind_7": "Name child 7",
-          "name_kind_8": "Name child 8",
-          "name_kind_9": "Name child 9",
-          "name_profil_1": "Name profile 1",
-          "name_profil_2": "Name profile 2",
-          "name_profil_3": "Name profile 3",
-          "name_profil_4": "Name profile 4",
-          "name_profil_5": "Name profile 5"
+          "name_kind_1": "Child 1 name",
+          "name_kind_2": "Child 2 name",
+          "name_kind_3": "Child 3 name",
+          "name_kind_4": "Child 4 name",
+          "name_kind_5": "Child 5 name",
+          "name_kind_6": "Child 6 name",
+          "name_kind_7": "Child 7 name",
+          "name_kind_8": "Child 8 name",
+          "name_kind_9": "Child 9 name",
+          "name_profil_1": "Profile 1 name",
+          "name_profil_2": "Profile 2 name",
+          "name_profil_3": "Profile 3 name",
+          "name_profil_4": "Profile 4 name",
+          "name_profil_5": "Profile 5 name"
         }
       },
       "visibility": {
         "title": "MedienStop.de – Visibility",
-        "description": "Pick the PARENTS first (they see the parent/settings tabs). Optionally assign a user per child (sees only their tab). Empty = visible to all. Persists across updates.",
+        "description": "First choose the PARENTS (they see the parent and settings tabs). Optionally one user per child who only sees that tab. Empty = visible to everyone.",
         "data": {
           "user_kind_1": "User for child 1",
           "user_kind_2": "User for child 2",
@@ -105,24 +117,54 @@
           "admin_users": "Parents (see parent & settings tabs)"
         }
       },
-      "videos": {
-        "title": "MedienStop.de – Videos",
-        "description": "Optional: video/image before turning off – pick in media browser, enter a URL, or use a spoken text announcement (e.g. read aloud on an Alexa/Echo speaker, requires the \"Alexa Media Player\" integration). Empty = off immediately.",
+      "ansage_timeup": {
+        "title": "Announcement: time/budget used up",
+        "description": "Choose what is played before switching off. The **bundled templates** need no download – they just work. Use **\"Test now\"** to hear the announcement without saving it.\n\nNote: an Alexa/Echo cannot play videos or media-browser files – pick an audio template, a file from `www/` or a spoken text there.\n\n{ergebnis}",
         "data": {
-          "media_timeup": "Video time/budget over (pick)",
-          "url_timeup": "…or URL (time/budget over)",
-          "tts_timeup": "…or spoken announcement (time/budget over, e.g. Alexa/Echo)",
-          "delay_timeup": "Delay time/budget over (s)",
-          "media_limit": "Video window end (pick)",
-          "url_limit": "…or URL (window end)",
-          "tts_limit": "…or spoken announcement (window end, e.g. Alexa/Echo)",
-          "delay_limit": "Delay window end (s)",
-          "media_notimer": "Video no timer (pick)",
-          "url_notimer": "…or URL (no timer)",
-          "tts_notimer": "…or spoken announcement (no timer, e.g. Alexa/Echo)",
-          "delay_notimer": "Delay no timer (s)"
+          "src": "Announcement source",
+          "media": "Own file from the media browser (leave empty to keep the current one)",
+          "www_file": "Own file from the www/ folder (for Alexa)",
+          "url": "Own URL",
+          "tts": "Text for Alexa to read out",
+          "sound": "Built-in Alexa sound",
+          "delay": "Delay before switching off (s)",
+          "test": "Test now – do not save yet"
+        }
+      },
+      "ansage_limit": {
+        "title": "Announcement: end of time window (bedtime)",
+        "description": "Choose what is played before switching off. The **bundled templates** need no download – they just work. Use **\"Test now\"** to hear the announcement without saving it.\n\nNote: an Alexa/Echo cannot play videos or media-browser files – pick an audio template, a file from `www/` or a spoken text there.\n\n{ergebnis}",
+        "data": {
+          "src": "Announcement source",
+          "media": "Own file from the media browser (leave empty to keep the current one)",
+          "www_file": "Own file from the www/ folder (for Alexa)",
+          "url": "Own URL",
+          "tts": "Text for Alexa to read out",
+          "sound": "Built-in Alexa sound",
+          "delay": "Delay before switching off (s)",
+          "test": "Test now – do not save yet"
+        }
+      },
+      "ansage_notimer": {
+        "title": "Announcement: no timer / outside allowed time",
+        "description": "Choose what is played before switching off. The **bundled templates** need no download – they just work. Use **\"Test now\"** to hear the announcement without saving it.\n\nNote: an Alexa/Echo cannot play videos or media-browser files – pick an audio template, a file from `www/` or a spoken text there.\n\n{ergebnis}",
+        "data": {
+          "src": "Announcement source",
+          "media": "Own file from the media browser (leave empty to keep the current one)",
+          "www_file": "Own file from the www/ folder (for Alexa)",
+          "url": "Own URL",
+          "tts": "Text for Alexa to read out",
+          "sound": "Built-in Alexa sound",
+          "delay": "Delay before switching off (s)",
+          "test": "Test now – do not save yet"
         }
       }
+    },
+    "error": {
+      "test_fehlgeschlagen": "The announcement could not be played – see details above."
+    },
+    "abort": {
+      "keine_benutzer": "There are no Home Assistant users that tabs could be assigned to."
     }
   },
   "selector": {
@@ -131,62 +173,160 @@
         "shared_pin": "Variant 1 – One dashboard for all (PIN per child)",
         "per_child": "Variant 2 – One dashboard per child (user sharing)"
       }
+    },
+    "announce_source": {
+      "options": {
+        "video_timeup": "Template · Video: \"TV time is over\"",
+        "video_limit": "Template · Video: \"Sleep well\"",
+        "video_notimer": "Template · Video: \"No TV time\"",
+        "audio_timeup": "Template · Audio (Alexa-ready): \"TV time is over\"",
+        "audio_limit": "Template · Audio (Alexa-ready): \"Sleep well\"",
+        "audio_notimer": "Template · Audio (Alexa-ready): \"No TV time\"",
+        "media": "Own file from the media browser (not for Alexa)",
+        "www": "Own file from the www/ folder (Alexa-ready)",
+        "url": "Own URL",
+        "tts": "Spoken text (Alexa speaks)",
+        "sound": "Built-in Alexa sound",
+        "none": "No announcement – switch off immediately"
+      }
     }
   },
   "entity": {
     "sensor": {
-      "remaining": {"name": "Remaining"},
-      "watched": {"name": "Watched today"},
-      "watched_week": {"name": "This week"},
-      "watched_month": {"name": "This month"},
-      "watched_year": {"name": "This year"},
-      "status": {"name": "Status"},
-      "parent_watched": {"name": "Parent time today"},
-      "parent_watched_week": {"name": "Parent time this week"},
-      "parent_watched_month": {"name": "Parent time this month"},
-      "parent_watched_year": {"name": "Parent time this year"},
-      "last_check": {"name": "Last check"}
+      "remaining": {
+        "name": "Remaining"
+      },
+      "watched": {
+        "name": "Watched today"
+      },
+      "watched_week": {
+        "name": "This week"
+      },
+      "watched_month": {
+        "name": "This month"
+      },
+      "watched_year": {
+        "name": "This year"
+      },
+      "status": {
+        "name": "Status"
+      },
+      "parent_watched": {
+        "name": "Parent time today"
+      },
+      "parent_watched_week": {
+        "name": "Parent time this week"
+      },
+      "parent_watched_month": {
+        "name": "Parent time this month"
+      },
+      "parent_watched_year": {
+        "name": "Parent time this year"
+      },
+      "last_check": {
+        "name": "Last check"
+      }
     },
     "binary_sensor": {
-      "tv_active": {"name": "TV active"}
+      "tv_active": {
+        "name": "TV active"
+      }
     },
     "switch": {
-      "system_active": {"name": "System active"},
-      "holiday": {"name": "Holiday today"},
-      "parent_override": {"name": "Parent time"},
-      "meal_pause": {"name": "Meal break"},
-      "parent_autooff_enabled": {"name": "Parent time auto-off"}
+      "system_active": {
+        "name": "System active"
+      },
+      "holiday": {
+        "name": "Holiday today"
+      },
+      "parent_override": {
+        "name": "Parent time"
+      },
+      "meal_pause": {
+        "name": "Meal break"
+      },
+      "parent_autooff_enabled": {
+        "name": "Parent time auto-off"
+      }
     },
     "number": {
-      "budget_werktag": {"name": "Budget weekday"},
-      "budget_wochenende": {"name": "Budget weekend"},
-      "budget_ferien": {"name": "Budget holidays"}
+      "budget_werktag": {
+        "name": "Budget weekday"
+      },
+      "budget_wochenende": {
+        "name": "Budget weekend"
+      },
+      "budget_ferien": {
+        "name": "Budget holidays"
+      }
     },
     "time": {
-      "werktag_start": {"name": "Weekday start"},
-      "werktag_ende": {"name": "Weekday end"},
-      "wochenende_start": {"name": "Weekend start"},
-      "wochenende_ende": {"name": "Weekend end"},
-      "ferien_start": {"name": "Holiday start"},
-      "ferien_ende": {"name": "Holiday end"},
-      "parent_autooff_time": {"name": "Parent time auto-off time"}
+      "werktag_start": {
+        "name": "Weekday start"
+      },
+      "werktag_ende": {
+        "name": "Weekday end"
+      },
+      "wochenende_start": {
+        "name": "Weekend start"
+      },
+      "wochenende_ende": {
+        "name": "Weekend end"
+      },
+      "ferien_start": {
+        "name": "Holiday start"
+      },
+      "ferien_ende": {
+        "name": "Holiday end"
+      },
+      "parent_autooff_time": {
+        "name": "Parent time auto-off time"
+      }
     },
     "select": {
-      "profile": {"name": "Profile"}
+      "profile": {
+        "name": "Profile"
+      }
     },
     "text": {
-      "pin": {"name": "PIN"},
-      "url_active": {"name": "Hook active"},
-      "url_inactive": {"name": "Hook inactive"},
-      "parent_url_active": {"name": "Parent mode hook active"},
-      "parent_url_inactive": {"name": "Parent mode hook inactive"}
+      "pin": {
+        "name": "PIN"
+      },
+      "url_active": {
+        "name": "Hook active"
+      },
+      "url_inactive": {
+        "name": "Hook inactive"
+      },
+      "parent_url_active": {
+        "name": "Parent mode hook active"
+      },
+      "parent_url_inactive": {
+        "name": "Parent mode hook inactive"
+      }
     },
     "button": {
-      "make_dashboard": {"name": "Create dashboard template"},
-      "diagnose": {"name": "Diagnostics"},
-      "video_test": {"name": "Test video"},
-      "reset_stats_all": {"name": "Reset ALL statistics"},
-      "reset_stats": {"name": "Reset statistics"}
+      "make_dashboard": {
+        "name": "Create dashboard template"
+      },
+      "diagnose": {
+        "name": "Diagnostics"
+      },
+      "video_test": {
+        "name": "Test announcement: time is up"
+      },
+      "reset_stats_all": {
+        "name": "Reset ALL statistics"
+      },
+      "reset_stats": {
+        "name": "Reset statistics"
+      },
+      "video_test_limit": {
+        "name": "Test announcement: end of window"
+      },
+      "video_test_notimer": {
+        "name": "Test announcement: no timer"
+      }
     }
   },
   "services": {
@@ -194,38 +334,62 @@
       "name": "Start timer (Play)",
       "description": "Starts/resumes a child's timer. Only possible if remaining time > 0 and within the allowed time window. PIN required if set for the child.",
       "fields": {
-        "child": {"name": "Child", "description": "Child ID, e.g. kind_1"},
-        "pin": {"name": "PIN", "description": "The child's PIN (only if set)."}
+        "child": {
+          "name": "Child",
+          "description": "Child ID, e.g. kind_1"
+        },
+        "pin": {
+          "name": "PIN",
+          "description": "The child's PIN (only if set)."
+        }
       }
     },
     "pause_timer": {
       "name": "Pause timer (Pause)",
       "description": "Pauses the running timer. The remaining time is kept.",
       "fields": {
-        "child": {"name": "Child", "description": "Child ID, e.g. kind_1"}
+        "child": {
+          "name": "Child",
+          "description": "Child ID, e.g. kind_1"
+        }
       }
     },
     "stop_timer": {
       "name": "Stop timer (Stop)",
       "description": "Sets the remaining time to 0. The child then has no time left for today and cannot start again.",
       "fields": {
-        "child": {"name": "Child", "description": "Child ID, e.g. kind_1"}
+        "child": {
+          "name": "Child",
+          "description": "Child ID, e.g. kind_1"
+        }
       }
     },
     "add_time": {
       "name": "Grant time (parents)",
       "description": "Adds minutes to ONE child or ALL children. Leave 'Child' empty or enter 'alle' = all children.",
       "fields": {
-        "child": {"name": "Child", "description": "Child ID (e.g. kind_1). Empty or 'alle' = all children."},
-        "minutes": {"name": "Minutes", "description": "Minutes to add."}
+        "child": {
+          "name": "Child",
+          "description": "Child ID (e.g. kind_1). Empty or 'alle' = all children."
+        },
+        "minutes": {
+          "name": "Minutes",
+          "description": "Minutes to add."
+        }
       }
     },
     "set_pin": {
       "name": "Set/clear PIN (parents)",
       "description": "Sets a child's PIN anew (leave empty to remove the PIN).",
       "fields": {
-        "child": {"name": "Child", "description": "Child ID, e.g. kind_1"},
-        "pin": {"name": "New PIN", "description": "Leave empty to remove the PIN."}
+        "child": {
+          "name": "Child",
+          "description": "Child ID, e.g. kind_1"
+        },
+        "pin": {
+          "name": "New PIN",
+          "description": "Leave empty to remove the PIN."
+        }
       }
     },
     "apply_budgets_now": {
@@ -236,32 +400,56 @@
       "name": "Create dashboard template",
       "description": "Creates a ready-made dashboard template (parent + child view) as a copyable notification. Without input the configured number of children/profiles is used.",
       "fields": {
-        "children": {"name": "Number of children", "description": "Optional - otherwise as configured."},
-        "profiles": {"name": "Number of profiles", "description": "Optional - otherwise as configured."}
+        "children": {
+          "name": "Number of children",
+          "description": "Optional - otherwise as configured."
+        },
+        "profiles": {
+          "name": "Number of profiles",
+          "description": "Optional - otherwise as configured."
+        }
       }
     },
     "play_media": {
       "name": "Stream video/image to the TV",
       "description": "Plays a media URL (mp4, image, audio) on the media_player entity selected as the TV.",
       "fields": {
-        "media": {"name": "Media file (pick)", "description": "Pick a file in the media browser."},
-        "url": {"name": "or media URL", "description": "Alternatively a direct URL/path (http/https or media-source://...)."},
-        "content_type": {"name": "Media type", "description": "Optional: video, image or music (otherwise automatic)."}
+        "media": {
+          "name": "Media file (pick)",
+          "description": "Pick a file in the media browser."
+        },
+        "url": {
+          "name": "or media URL",
+          "description": "Alternatively a direct URL/path (http/https or media-source://...)."
+        },
+        "content_type": {
+          "name": "Media type",
+          "description": "Optional: video, image or music (otherwise automatic)."
+        }
       }
     },
     "test_video": {
       "name": "Test video",
       "description": "Plays one of the configured videos immediately for testing.",
       "fields": {
-        "which": {"name": "Which video", "description": "timeup (goodbye), limit (window end) or notimer (notice)."}
+        "which": {
+          "name": "Which video",
+          "description": "timeup (goodbye), limit (window end) or notimer (notice)."
+        }
       }
     },
     "reset_statistics": {
       "name": "Reset statistics",
       "description": "Resets the watched time (statistics) - for ONE child or ALL. Leave 'Child' empty or enter 'alle' = all children.",
       "fields": {
-        "child": {"name": "Child", "description": "Child ID (e.g. kind_1). Empty or 'alle' = all children."},
-        "scope": {"name": "Scope", "description": "Which periods to reset (default: all)."}
+        "child": {
+          "name": "Child",
+          "description": "Child ID (e.g. kind_1). Empty or 'alle' = all children."
+        },
+        "scope": {
+          "name": "Scope",
+          "description": "Which periods to reset (default: all)."
+        }
       }
     }
   }

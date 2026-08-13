@@ -181,3 +181,13 @@ class LastCheckSensor(MedienStopEntity, SensorEntity):
     @property
     def native_value(self):
         return self.manager.last_check
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        # Der Heartbeat tickt auch bei Not-Aus weiter (er ist der Lebensbeweis der
+        # Integration) - deshalb hier dazusagen, in welchem Modus geprueft wird.
+        aktiv = bool(self.manager.system_active)
+        return {
+            "system_aktiv": aktiv,
+            "modus": "aktiv" if aktiv else "NOT-AUS - kein Eingriff in den Fernseher, keine Statistik",
+        }
