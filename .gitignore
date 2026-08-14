@@ -10,5 +10,6 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Entwickler-/Kontextdatei, nicht ins Repo synchronisieren
+# Entwickler-/Kontextdateien, nicht ins Repo synchronisieren
 AGENTS.md
+CLAUDE.md
