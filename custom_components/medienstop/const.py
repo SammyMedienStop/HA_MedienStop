@@ -92,12 +92,23 @@ ANNOUNCE_KEYS: list[str] = ["timeup", "limit", "notimer"]
 
 # Quellen-Kennungen. Die sechs Vorlagen (siehe BUNDLED_MEDIA) sind eigene
 # Quellen-Werte, damit im Konfigurations-Dialog EIN Auswahlfeld genuegt.
+SRC_AUTO = "auto"       # mitgelieferte Ansage, automatisch passend zum Geraet
 SRC_NONE = "none"       # keine Ansage -> sofort aus
 SRC_MEDIA = "media"     # eigene Datei aus dem Media-Browser (media-source://)
 SRC_WWW = "www"         # eigene Datei aus <config>/www/ (oeffentlich per HTTPS)
 SRC_URL = "url"         # eigene, frei eingegebene URL
 SRC_TTS = "tts"         # Text-Ansage (Alexa liest vor)
 SRC_SOUND = "sound"     # eingebauter Alexa-Klang (Amazon-Soundbibliothek)
+
+# Quellen, die eine zusaetzliche Eingabe brauchen -> zweiter Dialogschritt.
+# Alles andere (Vorlagen, "automatisch", "keine") ist mit der Auswahl fertig.
+SRC_MIT_EINGABE: dict[str, str] = {
+    SRC_MEDIA: "media",
+    SRC_WWW: "www_file",
+    SRC_URL: "url",
+    SRC_TTS: "tts",
+    SRC_SOUND: "sound",
+}
 
 # Mitgelieferte Ansagen. Sie liegen oeffentlich im GitHub-Repo und werden von
 # dort geladen -> der Nutzer muss NICHTS herunterladen oder kopieren.
@@ -118,18 +129,46 @@ BUNDLED_MEDIA: dict[str, tuple[str, str]] = {
     "audio_notimer": (f"{_RAW_MEDIA}/notimer_keine-tv-zeit.mp3",     "music"),
 }
 
-# Reihenfolge im Auswahlfeld: erst die Vorlagen, dann eigene Quellen.
-ANNOUNCE_SOURCES: list[str] = list(BUNDLED_MEDIA) + [
+# Reihenfolge im Auswahlfeld: "automatisch" zuerst (der fehlerfreie Normalfall),
+# dann die einzelnen Vorlagen, dann eigene Quellen.
+ANNOUNCE_SOURCES: list[str] = [SRC_AUTO] + list(BUNDLED_MEDIA) + [
     SRC_MEDIA, SRC_WWW, SRC_URL, SRC_TTS, SRC_SOUND, SRC_NONE,
 ]
 
-# Passende Vorlage je Grund - wird als Vorschlag angeboten, wenn fuer einen
-# Grund noch nichts eingerichtet ist.
+# Voreinstellung fuer einen noch nicht eingerichteten Grund: "automatisch" -
+# damit kann man nichts falsch machen, die Datei wird zur Laufzeit bestimmt.
 DEFAULT_BUNDLED: dict[str, str] = {
-    "timeup": "video_timeup",
-    "limit": "video_limit",
-    "notimer": "video_notimer",
+    "timeup": SRC_AUTO,
+    "limit": SRC_AUTO,
+    "notimer": SRC_AUTO,
 }
+
+
+def bundled_for(reason: str, audio: bool) -> str:
+    """Mitgelieferte Vorlage fuer einen Grund - als Audio oder als Video.
+
+    Das ist die Aufloesung von SRC_AUTO: Ein Echo bekommt die MP3, alles
+    andere das MP4. So kann der Nutzer die Kombination nicht falsch waehlen.
+    """
+    if reason not in ANNOUNCE_KEYS:
+        reason = "timeup"
+    return f"{'audio' if audio else 'video'}_{reason}"
+
+
+def sources_for_target(is_alexa: bool) -> list[str]:
+    """Auswahlliste passend zum Ziel - Unmoegliches gar nicht erst anbieten.
+
+    Ein Echo kann keine Videos und nichts aus dem Media-Browser abspielen;
+    umgekehrt kann ein Fernseher weder vorlesen noch Alexa-Klaenge spielen.
+    Frueher standen alle Optionen immer zur Wahl - die Fehlermeldung kam erst
+    beim Testen (oder gar nicht).
+    """
+    if is_alexa:
+        return [SRC_AUTO, "audio_timeup", "audio_limit", "audio_notimer",
+                SRC_WWW, SRC_URL, SRC_TTS, SRC_SOUND, SRC_NONE]
+    return [SRC_AUTO, "video_timeup", "video_limit", "video_notimer",
+            "audio_timeup", "audio_limit", "audio_notimer",
+            SRC_MEDIA, SRC_WWW, SRC_URL, SRC_NONE]
 
 # Kleine Auswahl aus Amazons Klangbibliothek. Im Dialog ist freie Eingabe
 # erlaubt, jede Kennung aus der ASK Sound Library funktioniert:
@@ -173,6 +212,10 @@ def normalize_announce(cfg: dict | None) -> dict:
     delay = as_int(cfg.get("delay"), DEFAULT_DELAY)
 
     src = cfg.get("src")
+    if src == SRC_AUTO:
+        # Die Datei wird erst zur Laufzeit bestimmt (Ziel bekannt) -> hier nur
+        # die Absicht durchreichen, sonst nichts.
+        return {"src": SRC_AUTO, "delay": delay}
     if src:
         out = {"src": src, "delay": delay}
         for key in ("id", "type", "file", "tts", "sound"):

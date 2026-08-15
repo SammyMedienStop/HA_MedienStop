@@ -61,13 +61,20 @@ Quelle `id`/`type`, `file`, `tts` oder `sound`.
 
 | `src` | Bedeutung |
 |---|---|
-| `video_*` / `audio_*` (6 Werte) | mitgelieferte Vorlage; URL aus `BUNDLED_MEDIA` (raw.githubusercontent, Branch `main`) |
+| `auto` | **Standard.** Mitgelieferte Vorlage, erst zur Laufzeit aufgelöst: `bundled_for(reason, audio=is_alexa)` → Audio für ein Echo, sonst Video. Folgt einem Gerätewechsel automatisch. |
+| `video_*` / `audio_*` (6 Werte) | mitgelieferte Vorlage, fest gewählt; URL aus `BUNDLED_MEDIA` (raw.githubusercontent, Branch `main`) |
 | `media` | eigene Datei aus dem Media-Browser (`media-source://`) |
 | `www` | eigene Datei aus `<config>/www/`; nur der **Dateiname** wird gespeichert |
 | `url` | frei eingegebene URL |
 | `tts` | Text, den Alexa vorliest |
 | `sound` | eingebauter Alexa-Klang (`media_content_type="sound"`) |
 | `none` | keine Ansage → sofort aus |
+
+`sources_for_target(is_alexa)` liefert die **anbietbare** Teilmenge: An einem Echo
+fehlen `video_*` und `media`, an allem anderen `tts` und `sound`. Der Options-Flow
+baut sein Auswahlfeld daraus, sodass unmögliche Kombinationen gar nicht erst
+wählbar sind. `SRC_MIT_EINGABE` listet die Quellen, die ein zusätzliches Feld
+brauchen — nur sie führen in den zweiten Dialogschritt (`async_step_detail`).
 
 `normalize_announce()` liest die **alte** Form aus ≤ 2.4.x (`{id,type,delay,tts}`)
 weiter und bildet deren Vorrang ab (TTS schlug Video). Es wird **nichts migriert** —
@@ -76,16 +83,33 @@ gibt es weder einen `ConfigEntry.VERSION`-Bump noch `async_migrate_entry`.
 `as_int()` ersetzt `int(x or default)`, damit eine Verzögerung von **0** erhalten
 bleibt.
 
-`MedienStopManager.announce(reason, cfg=None)` → `(gestartet, Klartext)` ist die
-zentrale Weiche. Mit `cfg` lassen sich **ungespeicherte** Formularwerte abspielen —
-das ist der Test-Knopf im Options-Flow. Die flachen Attribute (`video_*`, `tts_*`,
-`delay_*`) bleiben aus Bestandsschutz erhalten und werden aus `media_cfg` abgeleitet.
+**Entscheidung und Ausführung sind getrennt** (seit 2.5.1):
+
+| Funktion | Rolle |
+|---|---|
+| `_announce_plan(reason, cfg)` | rein, ohne Seiteneffekt → `(art, nutzlast, ctype, meldung)` mit `art ∈ {nein, play, speak, speak_ssml}`. Hier sitzen alle Prüfungen (Ziel vorhanden/verfügbar, Alexa-Grenzen, `auto`-Auflösung). |
+| `announce(reason, cfg)` | **beiläufig** — stößt den Dienst nur an. Für `_goodbye_then_off`, wo nichts blockieren darf. Rückgabe heißt „abgeschickt", nicht „hat geklappt". |
+| `async_announce(reason, cfg)` | **wartet ab** und liefert den echten Fehlertext. Für den Test-Knopf und `medienstop.test_video`. |
+
+Der Unterschied ist keine Feinheit: Bis 2.5.0 gab es nur die beiläufige Variante, und
+weil der Test-Knopf sie benutzte, meldete er **immer** Erfolg — ein stummer Echo war
+nicht von einem funktionierenden zu unterscheiden.
+
+Mit `cfg` lassen sich **ungespeicherte** Formularwerte abspielen — das ist der
+Test-Knopf im Options-Flow. Die flachen Attribute (`video_*`, `tts_*`, `delay_*`)
+bleiben aus Bestandsschutz erhalten und werden aus `media_cfg` abgeleitet.
 
 `_target_is_alexa()` prüft über die Entity-Registry, ob hinter `media_target()` die
 Integration `alexa_media` steckt. Ist das so, gilt:
 - Videos und `media-source://`-Dateien werden **abgelehnt** (mit erklärender Meldung),
-- Audio-URLs laufen über `_speak_audio_url()` → SSML `<audio src='…'/>` als
-  `notify.alexa_media` mit **`type: "tts"`** (reiner Text nutzt weiterhin `announce`).
+- Audio-URLs laufen über `_speak_audio_url()` → `_ssml_audio()` baut
+  **`<speak><audio src="…"/></speak>`** und schickt es als `notify.alexa_media` mit
+  **`type: "tts"`** (reiner Text nutzt weiterhin `announce`). Der `<speak>`-Rahmen ist
+  Pflicht — ohne ihn verwirft Amazon die Datei kommentarlos (siehe PATCHLOG 2.5.1).
+
+Vor allem anderen prüft `_announce_plan()` den **Zustand des Ziels**: Eine fehlende
+Entity oder `unavailable`/`unknown` führt zur Absage mit Klartext. `off` bleibt
+zulässig, weil `play_media` einen ausgeschalteten Fernseher aufwecken kann.
 
 ## Warum Alexa einen Sonderweg braucht
 Ein Echo kann per `media_player.play_media` **keine** beliebigen Dateien abspielen.

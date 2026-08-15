@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.5.1
+- **Fix (wichtig): Ansagen auf Alexa blieben stumm.** Die Audiodatei wurde ohne den
+  vorgeschriebenen `<speak>`-Rahmen an Alexa geschickt – Amazon verwarf sie dann
+  kommentarlos. Jetzt kommt die Ansage an. Zusätzlich werden Sonderzeichen in der
+  Adresse korrekt maskiert.
+- **Fix (wichtig): „Jetzt testen" meldete immer Erfolg.** Der Test startete die
+  Wiedergabe nur im Hintergrund und meldete sofort „läuft", ohne das Ergebnis
+  abzuwarten. Ein fehlender Dienst, ein ausgeschaltetes Gerät oder ein stummer Echo
+  blieben dadurch **völlig unsichtbar**. Jetzt wartet der Test das Ergebnis ab und
+  zeigt im Dialog, was wirklich passiert ist.
+- **Fix: Ein totes Zielgerät fällt jetzt auf.** War als Fernseher oder Video-Player
+  ein Gerät eingetragen, das es nicht mehr gibt oder das gerade nicht erreichbar ist,
+  passierte einfach nichts. Jetzt steht es im Klartext im Dialog.
+- **Neu: „Mitgelieferte Ansage" wählt die Datei selbst.** Die neue Standard-Einstellung
+  nimmt automatisch die richtige Vorlage – ein **Video** für den Fernseher, eine
+  **Audiodatei** für Alexa, passend zum jeweiligen Anlass. Du musst nicht mehr wissen,
+  was dein Gerät kann; ein späterer Gerätewechsel zieht von allein nach.
+- **Neu: Es werden nur noch Quellen angeboten, die auch funktionieren.** An einem Echo
+  gibt es keine Video-Vorlagen mehr zur Auswahl, an einem Fernseher keine Text-Ansage.
+  Damit lässt sich die Kombination gar nicht mehr falsch einstellen.
+- **Neu: Der Ansage-Dialog fragt nur noch, was gebraucht wird.** Statt acht Feldern auf
+  einmal kommt zuerst nur die Auswahl der Quelle – und **nur bei eigenen Dateien** ein
+  zweiter Schritt mit genau dem einen passenden Feld. Bei den mitgelieferten Ansagen
+  ist nach der Auswahl Schluss.
+- **Geändert:** Die Alexa-Klänge stehen jetzt mit Klartext-Namen in der Liste
+  („Türgong" statt `amzn_sfx_doorbell_chime_01`), und bei der Dateiauswahl aus `www/`
+  ist keine freie Eingabe mehr möglich – nur noch wirklich vorhandene Dateien.
+
 ## 2.5.0
 - **Neu: Mitgelieferte Ansagen zum Anklicken.** In *Konfigurieren → Ansage …* gibt es
   jetzt **eine Auswahlliste** mit den fertigen MedienStop-Ansagen – je Fall als

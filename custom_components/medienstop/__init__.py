@@ -36,12 +36,14 @@ from .dashboard import build_dashboard_yaml
 from .const import (
     ANNOUNCE_KEYS,
     BUNDLED_MEDIA,
+    SRC_AUTO,
     SRC_NONE,
     SRC_SOUND,
     SRC_TTS,
     SRC_WWW,
     announce_media,
     as_int,
+    bundled_for,
     normalize_announce,
     ATTR_CHILD,
     CONF_NAMES,
@@ -625,12 +627,15 @@ class MedienStopManager:
             return
         self.hass.async_create_task(self._async_play_media(url, content_type))
 
-    async def _async_play_media(self, url: str, content_type: str | None) -> None:
+    async def _async_play_media(self, url: str, content_type: str | None,
+                                notify_on_error: bool = True) -> tuple[bool, str]:
+        """-> (geklappt, Fehlertext). `notify_on_error=False`, wenn der Aufrufer
+        den Fehler selbst anzeigt (Test-Knopf im Dialog)."""
         # media-source:// und http(s) werden DIREKT an den media_player geschickt.
         # Home Assistant loest media-source fuer das Zielgeraet selbst auf.
         target = self.media_target()
         ctype = content_type or self._media_type(url)
-        _LOGGER.info("MedienStop.de play_media -> Ziel=%s, id=%s, typ=%s", target, url, ctype)
+        _LOGGER.warning("MedienStop.de play_media -> Ziel=%s, id=%s, typ=%s", target, url, ctype)
         try:
             await self.hass.services.async_call(
                 "media_player", "play_media",
@@ -639,11 +644,31 @@ class MedienStopManager:
             )
         except Exception as err:  # pragma: no cover
             _LOGGER.error("play_media auf %s fehlgeschlagen: %s", target, err)
-            await self.hass.services.async_call("persistent_notification", "create", {
-                "title": "MedienStop.de – Video",
-                "message": (f"Abspielen auf **{target}** fehlgeschlagen:\n{err}\n\n"
-                            "Ist das die richtige (media_player-)Entitaet und das Geraet an?"),
-                "notification_id": "medienstop_video_err"}, blocking=False)
+            text = (f"Abspielen auf {target} fehlgeschlagen: {err}\n"
+                    "Ist das die richtige (media_player-)Entitaet und das Geraet an?")
+            if notify_on_error:
+                await self.hass.services.async_call("persistent_notification", "create", {
+                    "title": "MedienStop.de – Video",
+                    "message": (f"Abspielen auf **{target}** fehlgeschlagen:\n{err}\n\n"
+                                "Ist das die richtige (media_player-)Entitaet und das Geraet an?"),
+                    "notification_id": "medienstop_video_err"}, blocking=False)
+            return False, text
+        return True, ""
+
+    @staticmethod
+    def _ssml_audio(url: str) -> str:
+        """Baut die SSML-Nachricht fuer eine Audiodatei auf Alexa.
+
+        WICHTIG: Der <speak>-Rahmen ist Pflicht. Ohne ihn erkennt der Alexa
+        Media Player die Nachricht nicht als SSML, verwirft den <audio>-Tag und
+        der Echo bleibt STUMM - ohne jede Fehlermeldung (Bug bis 2.5.0).
+        Ausserdem muss die URL in doppelten Anfuehrungszeichen stehen und
+        &-Zeichen (Query-Parameter!) muessen maskiert sein, sonst ist das SSML
+        ungueltig und Amazon lehnt es ebenfalls stillschweigend ab.
+        """
+        safe = (url.replace("&", "&amp;").replace("<", "&lt;")
+                   .replace(">", "&gt;").replace('"', "&quot;"))
+        return f'<speak><audio src="{safe}"/></speak>'
 
     def _speak_audio_url(self, url: str) -> None:
         """Spielt eine MP3 auf einem Alexa/Echo ab (Umweg ueber SSML).
@@ -656,7 +681,7 @@ class MedienStopManager:
           * MP3, MPEG Version 2, 48 kbps, 16000/22050/24000 Hz, max. 240 s
         Die mitgelieferten Ansagen erfuellen das (siehe media/README.md).
         """
-        self._speak(f"<audio src='{url}'/>", ssml=True)
+        self._speak(self._ssml_audio(url), ssml=True)
 
     def _speak(self, text: str, ssml: bool = False) -> None:
         """Liest einen Text auf dem Streaming-Ziel vor (Alternative zu Video/Audio-Datei,
@@ -669,7 +694,10 @@ class MedienStopManager:
             return
         self.hass.async_create_task(self._async_speak(text, ssml))
 
-    async def _async_speak(self, text: str, ssml: bool = False) -> None:
+    async def _async_speak(self, text: str, ssml: bool = False,
+                           notify_on_error: bool = True) -> tuple[bool, str]:
+        """-> (geklappt, Fehlertext). `notify_on_error=False`, wenn der Aufrufer
+        den Fehler selbst anzeigt (Test-Knopf im Dialog)."""
         # Nutzt den notify-Service der "Alexa Media Player"-Integration (HACS), der
         # Text direkt ueber Amazons eigene Sprachausgabe vorliest - dafuer wird KEIN
         # gehostetes Audio/Video benoetigt (im Gegensatz zu _play_media). Funktioniert
@@ -677,15 +705,19 @@ class MedienStopManager:
         target = self.media_target()
         if not self.hass.services.has_service("notify", "alexa_media"):
             _LOGGER.warning("Ansage auf %s fehlgeschlagen: notify.alexa_media nicht verfuegbar", target)
-            await self.hass.services.async_call("persistent_notification", "create", {
-                "title": "MedienStop.de – Ansage",
-                "message": (f"Text-Ansage auf **{target}** nicht moeglich: der Service "
-                            "`notify.alexa_media` existiert nicht.\n\n"
-                            "Ist die (HACS-)Integration **Alexa Media Player** installiert und "
-                            "eingerichtet? Ohne sie kann MedienStop.de keine Sprachansage auf "
-                            "einem Alexa/Echo-Geraet abspielen."),
-                "notification_id": "medienstop_tts_err"}, blocking=False)
-            return
+            text_err = (f"Ansage auf {target} nicht moeglich: der Service notify.alexa_media "
+                        "existiert nicht. Ist die (HACS-)Integration 'Alexa Media Player' "
+                        "installiert und eingerichtet?")
+            if notify_on_error:
+                await self.hass.services.async_call("persistent_notification", "create", {
+                    "title": "MedienStop.de – Ansage",
+                    "message": (f"Text-Ansage auf **{target}** nicht moeglich: der Service "
+                                "`notify.alexa_media` existiert nicht.\n\n"
+                                "Ist die (HACS-)Integration **Alexa Media Player** installiert und "
+                                "eingerichtet? Ohne sie kann MedienStop.de keine Sprachansage auf "
+                                "einem Alexa/Echo-Geraet abspielen."),
+                    "notification_id": "medienstop_tts_err"}, blocking=False)
+            return False, text_err
         # Reiner Text -> "announce" (mit Aufmerksamkeitston). Ein SSML-<audio>-Tag
         # muss dagegen als "tts" gesendet werden, sonst spielt Amazon die Datei nicht.
         msg_type = "tts" if ssml else "announce"
@@ -693,17 +725,23 @@ class MedienStopManager:
         try:
             await self.hass.services.async_call(
                 "notify", "alexa_media",
-                {"message": text, "target": target, "data": {"type": msg_type}},
+                {"message": text, "target": [target], "data": {"type": msg_type}},
                 blocking=True,
             )
         except Exception as err:  # pragma: no cover
             _LOGGER.error("Ansage auf %s fehlgeschlagen: %s", target, err)
-            await self.hass.services.async_call("persistent_notification", "create", {
-                "title": "MedienStop.de – Ansage",
-                "message": (f"Text-Ansage auf **{target}** fehlgeschlagen:\n{err}\n\n"
-                            "Ist 'Communications' fuer dieses Geraet in der Alexa-App aktiviert? "
-                            "Das wird fuer Ansagen (announce) benoetigt."),
-                "notification_id": "medienstop_tts_err"}, blocking=False)
+            text_err = (f"Ansage auf {target} fehlgeschlagen: {err}\n"
+                        "Ist 'Communications' fuer dieses Geraet in der Alexa-App aktiviert? "
+                        "Das wird fuer Ansagen (announce) benoetigt.")
+            if notify_on_error:
+                await self.hass.services.async_call("persistent_notification", "create", {
+                    "title": "MedienStop.de – Ansage",
+                    "message": (f"Text-Ansage auf **{target}** fehlgeschlagen:\n{err}\n\n"
+                                "Ist 'Communications' fuer dieses Geraet in der Alexa-App aktiviert? "
+                                "Das wird fuer Ansagen (announce) benoetigt."),
+                    "notification_id": "medienstop_tts_err"}, blocking=False)
+            return False, text_err
+        return True, ""
 
     # --- Ansage-Weiche (Vorlage / eigene Datei / URL / Text / Alexa-Klang) ----
     def _target_is_alexa(self) -> bool:
@@ -741,78 +779,141 @@ class MedienStopManager:
             return ""
         return f"{base.rstrip('/')}/local/{filename.lstrip('/')}"
 
-    def announce(self, reason: str, cfg: dict | None = None) -> tuple[bool, str]:
-        """Spielt die Ansage fuer einen Grund ab. -> (gestartet, Klartext-Meldung)
+    def _announce_plan(self, reason: str, cfg: dict | None = None) -> tuple[str, str, str | None, str]:
+        """Entscheidet OHNE Seiteneffekt, was abgespielt werden soll.
 
-        `cfg=None` nutzt die gespeicherte Einstellung. Wird ein `cfg` uebergeben,
-        werden NOCH NICHT GESPEICHERTE Formularwerte abgespielt - das ist der
-        Test-Knopf im Konfigurations-Dialog.
+        -> (art, nutzlast, content_type, meldung) mit art aus
+        {"nein", "play", "speak", "speak_ssml"}. "nein" heisst: nichts zu tun,
+        `meldung` ist dann der Grund im Klartext. Getrennt von der Ausfuehrung,
+        damit derselbe Weg einmal beilaeufig (Abschaltung) und einmal mit echtem
+        Abwarten (Test-Knopf) benutzt werden kann.
         """
         cfg = normalize_announce(cfg if cfg is not None else self.media_cfg.get(reason))
         src = cfg.get("src", SRC_NONE)
         target = self.media_target()
 
         if src == SRC_NONE:
-            return False, "Keine Ansage eingestellt - der Fernseher geht sofort aus."
+            return "nein", "", None, "Keine Ansage eingestellt - der Fernseher geht sofort aus."
         if not target:
-            return False, ("Es ist kein Ziel eingerichtet. Bitte unter Konfigurieren "
-                           "einen Fernseher oder Video-Player waehlen.")
+            return "nein", "", None, ("Es ist kein Ziel eingerichtet. Bitte unter Konfigurieren "
+                                      "einen Fernseher oder Video-Player waehlen.")
         if not target.startswith("media_player."):
-            return False, (f"Das Ziel {target} ist kein media_player. Fuer Ansagen bitte "
-                           "unter Konfigurieren einen Video-Player (media_player) waehlen.")
+            return "nein", "", None, (f"Das Ziel {target} ist kein media_player. Fuer Ansagen bitte "
+                                      "unter Konfigurieren einen Video-Player (media_player) waehlen.")
+
+        # Ein abgemeldetes/entferntes Geraet nimmt Befehle stumm entgegen: nichts
+        # passiert, kein Fehler. Genau daran scheiterten Ansagen bisher unbemerkt,
+        # wenn als Video-Player noch ein altes Geraet eingetragen war.
+        zustand = self.hass.states.get(target)
+        if zustand is None:
+            return "nein", "", None, (
+                f"Das eingestellte Ziel {target} gibt es nicht (mehr). Bitte unter "
+                "Konfigurieren einen vorhandenen Fernseher oder Video-Player waehlen.")
+        if zustand.state in ("unavailable", "unknown"):
+            return "nein", "", None, (
+                f"Das Ziel {target} ist gerade nicht verfuegbar (Status: {zustand.state}). "
+                "Ist das Geraet eingeschaltet und mit dem Netz verbunden? Solange es so "
+                "ist, kann keine Ansage abgespielt werden.")
 
         is_alexa = self._target_is_alexa()
+
+        # --- "Automatisch passend": jetzt erst die Vorlage bestimmen ---------
+        # Erst hier ist bekannt, ob das Ziel ein Echo ist. Dadurch kann der
+        # Nutzer die Kombination Geraet/Dateityp gar nicht falsch waehlen, und
+        # ein spaeterer Geraetewechsel zieht automatisch nach.
+        if src == SRC_AUTO:
+            src = bundled_for(reason, audio=is_alexa)
+            cfg = {**cfg, "src": src}
 
         # --- Text-Ansage: laeuft ueber Alexas Sprachausgabe ------------------
         if src == SRC_TTS:
             text = cfg.get("tts") or ""
             if not text:
-                return False, "Es ist kein Ansage-Text eingetragen."
-            self._speak(text)
-            return True, f"Text-Ansage an {target}: „{text}“"
+                return "nein", "", None, "Es ist kein Ansage-Text eingetragen."
+            if not is_alexa:
+                return "nein", "", None, (
+                    f"Eine Text-Ansage kann nur ein Alexa/Echo vorlesen. {target} ist "
+                    "keins - bitte eine Video-/Audio-Vorlage waehlen oder unter "
+                    "Konfigurieren einen Echo als Video-Player eintragen.")
+            return "speak", text, None, f"Text-Ansage an {target}: „{text}“"
 
         # --- Eingebauter Alexa-Klang -----------------------------------------
         if src == SRC_SOUND:
             sound = cfg.get("sound") or ""
             if not sound:
-                return False, "Es ist kein Klang ausgewaehlt."
+                return "nein", "", None, "Es ist kein Klang ausgewaehlt."
             if not is_alexa:
-                return False, (f"Eingebaute Alexa-Klaenge gibt es nur auf Echo-Geraeten. "
-                               f"{target} ist keins - bitte eine andere Quelle waehlen.")
-            self._play_media(sound, "sound")
-            return True, f"Alexa-Klang „{sound}“ an {target}"
+                return "nein", "", None, (f"Eingebaute Alexa-Klaenge gibt es nur auf Echo-Geraeten. "
+                                          f"{target} ist keins - bitte eine andere Quelle waehlen.")
+            return "play", sound, "sound", f"Alexa-Klang „{sound}“ an {target}"
 
         # --- Dateibasierte Quellen -------------------------------------------
         if src == SRC_WWW:
             filename = cfg.get("file") or ""
             if not filename:
-                return False, "Es ist keine Datei aus dem Ordner www/ ausgewaehlt."
+                return "nein", "", None, "Es ist keine Datei aus dem Ordner www/ ausgewaehlt."
             url = self._public_local_url(filename)
             if not url:
-                return False, ("Home Assistant hat keine oeffentliche HTTPS-Adresse. "
-                               "Eigene Dateien brauchen Nabu Casa oder eine eigene Domain - "
-                               "sonst bitte eine mitgelieferte Vorlage verwenden.")
+                return "nein", "", None, ("Home Assistant hat keine oeffentliche HTTPS-Adresse. "
+                                          "Eigene Dateien brauchen Nabu Casa oder eine eigene Domain - "
+                                          "sonst bitte eine mitgelieferte Vorlage verwenden.")
             ctype = self._media_type(url)
         else:
             url, ctype = announce_media(cfg)
             if not url:
-                return False, "Fuer diese Ansage ist keine Datei hinterlegt."
+                return "nein", "", None, "Fuer diese Ansage ist keine Datei hinterlegt."
             ctype = ctype or self._media_type(url)
 
         if is_alexa:
             # Alexa kann weder media-source-Dateien noch Videos abspielen.
             if url.startswith("media-source"):
-                return False, ("Alexa kann keine Dateien aus dem Media-Browser abspielen. "
-                               "Bitte eine mitgelieferte Audio-Vorlage, eine Datei aus www/ "
-                               "oder eine Text-Ansage waehlen.")
+                return "nein", "", None, ("Alexa kann keine Dateien aus dem Media-Browser abspielen. "
+                                          "Bitte eine mitgelieferte Audio-Vorlage, eine Datei aus www/ "
+                                          "oder eine Text-Ansage waehlen.")
             if ctype == "video" or url.lower().split("?")[0].endswith((".mp4", ".mkv", ".avi")):
-                return False, ("Alexa kann keine Videos abspielen. Bitte die passende "
-                               "Audio-Vorlage (MP3) statt der Video-Vorlage waehlen.")
-            self._speak_audio_url(url)
-            return True, f"Audio-Ansage an {target} (Alexa):\n{url}"
+                return "nein", "", None, ("Alexa kann keine Videos abspielen. Bitte die passende "
+                                          "Audio-Vorlage (MP3) statt der Video-Vorlage waehlen.")
+            if not url.lower().startswith("https://"):
+                return "nein", "", None, (
+                    "Alexa laedt die Audiodatei selbst herunter und braucht dafuer eine "
+                    f"oeffentliche HTTPS-Adresse. Diese hier ist keine:\n{url}")
+            return "speak_ssml", self._ssml_audio(url), None, f"Audio-Ansage an {target} (Alexa):\n{url}"
 
-        self._play_media(url, ctype)
-        return True, f"Ansage an {target}:\n{url}"
+        return "play", url, ctype, f"Ansage an {target}:\n{url}"
+
+    def announce(self, reason: str, cfg: dict | None = None) -> tuple[bool, str]:
+        """Startet die Ansage beilaeufig. -> (gestartet, Klartext-Meldung)
+
+        ACHTUNG: "gestartet" heisst NICHT "hat geklappt" - der eigentliche
+        Aufruf laeuft als Hintergrund-Task. Wer wissen muss, ob wirklich Ton
+        kam, nimmt `async_announce` (siehe dort).
+        """
+        art, payload, ctype, meldung = self._announce_plan(reason, cfg)
+        if art == "nein":
+            return False, meldung
+        if art == "play":
+            self._play_media(payload, ctype)
+        else:
+            self._speak(payload, ssml=(art == "speak_ssml"))
+        return True, meldung
+
+    async def async_announce(self, reason: str, cfg: dict | None = None) -> tuple[bool, str]:
+        """Wie `announce`, wartet aber den Dienst-Aufruf ab. -> (geklappt, Meldung)
+
+        Der Test-Knopf im Dialog braucht das: `announce` meldete frueher immer
+        Erfolg, weil es den Aufruf nur als Task startete - ein fehlender
+        `notify.alexa_media`-Dienst oder ein stummer Echo blieb dadurch
+        unsichtbar (Bug bis 2.5.0).
+        """
+        art, payload, ctype, meldung = self._announce_plan(reason, cfg)
+        if art == "nein":
+            return False, meldung
+        if art == "play":
+            ok, fehler = await self._async_play_media(payload, ctype, notify_on_error=False)
+        else:
+            ok, fehler = await self._async_speak(payload, ssml=(art == "speak_ssml"),
+                                                 notify_on_error=False)
+        return (True, meldung) if ok else (False, fehler)
 
     def _goodbye_then_off(self, reason: str) -> None:
         """Spielt die passende Ansage und schaltet den TV nach Verzoegerung aus."""
@@ -1236,7 +1337,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         en = (hass.config.language or "de")[:2].lower() == "en"
         title = "MedienStop.de – Video test" if en else "MedienStop.de – Video-Test"
         for mgr in _managers(hass):
-            gespielt, meldung = mgr.announce(which)
+            gespielt, meldung = await mgr.async_announce(which)
             if not gespielt:
                 msg = meldung
             elif mgr._target_is_alexa():

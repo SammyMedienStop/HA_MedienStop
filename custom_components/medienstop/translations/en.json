@@ -119,43 +119,41 @@
       },
       "ansage_timeup": {
         "title": "Announcement: time/budget used up",
-        "description": "Choose what is played before switching off. The **bundled templates** need no download – they just work. Use **\"Test now\"** to hear the announcement without saving it.\n\nNote: an Alexa/Echo cannot play videos or media-browser files – pick an audio template, a file from `www/` or a spoken text there.\n\n{ergebnis}",
+        "description": "Choose what is played before switching off.\n\n**Bundled announcement** is the easiest choice: MedienStop.de picks the right file automatically – a video for the TV, an audio file for Alexa. Nothing to download, nothing to copy.\n\nOnly sources that actually work on your selected device are offered.\n\n{ergebnis}",
         "data": {
           "src": "Announcement source",
-          "media": "Own file from the media browser (leave empty to keep the current one)",
-          "www_file": "Own file from the www/ folder (for Alexa)",
-          "url": "Own URL",
-          "tts": "Text for Alexa to read out",
-          "sound": "Built-in Alexa sound",
-          "delay": "Delay before switching off (s)",
+          "delay": "Delay before switching off (sec.)",
           "test": "Test now – do not save yet"
         }
       },
       "ansage_limit": {
         "title": "Announcement: end of time window (bedtime)",
-        "description": "Choose what is played before switching off. The **bundled templates** need no download – they just work. Use **\"Test now\"** to hear the announcement without saving it.\n\nNote: an Alexa/Echo cannot play videos or media-browser files – pick an audio template, a file from `www/` or a spoken text there.\n\n{ergebnis}",
+        "description": "Choose what is played before switching off.\n\n**Bundled announcement** is the easiest choice: MedienStop.de picks the right file automatically – a video for the TV, an audio file for Alexa. Nothing to download, nothing to copy.\n\nOnly sources that actually work on your selected device are offered.\n\n{ergebnis}",
         "data": {
           "src": "Announcement source",
-          "media": "Own file from the media browser (leave empty to keep the current one)",
-          "www_file": "Own file from the www/ folder (for Alexa)",
-          "url": "Own URL",
-          "tts": "Text for Alexa to read out",
-          "sound": "Built-in Alexa sound",
-          "delay": "Delay before switching off (s)",
+          "delay": "Delay before switching off (sec.)",
           "test": "Test now – do not save yet"
         }
       },
       "ansage_notimer": {
         "title": "Announcement: no timer / outside allowed time",
-        "description": "Choose what is played before switching off. The **bundled templates** need no download – they just work. Use **\"Test now\"** to hear the announcement without saving it.\n\nNote: an Alexa/Echo cannot play videos or media-browser files – pick an audio template, a file from `www/` or a spoken text there.\n\n{ergebnis}",
+        "description": "Choose what is played before switching off.\n\n**Bundled announcement** is the easiest choice: MedienStop.de picks the right file automatically – a video for the TV, an audio file for Alexa. Nothing to download, nothing to copy.\n\nOnly sources that actually work on your selected device are offered.\n\n{ergebnis}",
         "data": {
           "src": "Announcement source",
-          "media": "Own file from the media browser (leave empty to keep the current one)",
-          "www_file": "Own file from the www/ folder (for Alexa)",
-          "url": "Own URL",
+          "delay": "Delay before switching off (sec.)",
+          "test": "Test now – do not save yet"
+        }
+      },
+      "detail": {
+        "title": "Announcement: your own entry",
+        "description": "Just this one entry is missing.\n\nUse **“Test now”** to hear the result without saving.\n\n{ergebnis}",
+        "data": {
+          "media": "File from the media browser (leave empty = keep current)",
+          "www_file": "File from the www/ folder",
+          "url": "File address (https://…)",
           "tts": "Text for Alexa to read out",
-          "sound": "Built-in Alexa sound",
-          "delay": "Delay before switching off (s)",
+          "sound": "Alexa sound",
+          "delay": "Delay before switching off (sec.)",
           "test": "Test now – do not save yet"
         }
       }
@@ -164,7 +162,8 @@
       "test_fehlgeschlagen": "The announcement could not be played – see details above."
     },
     "abort": {
-      "keine_benutzer": "There are no Home Assistant users that tabs could be assigned to."
+      "keine_benutzer": "There are no Home Assistant users that tabs could be assigned to.",
+      "keine_www_dateien": "There is no audio/video file in the `www/` folder. Put a file there (e.g. via the file editor) or choose a bundled announcement."
     }
   },
   "selector": {
@@ -176,18 +175,29 @@
     },
     "announce_source": {
       "options": {
-        "video_timeup": "Template · Video: \"TV time is over\"",
-        "video_limit": "Template · Video: \"Sleep well\"",
-        "video_notimer": "Template · Video: \"No TV time\"",
-        "audio_timeup": "Template · Audio (Alexa-ready): \"TV time is over\"",
-        "audio_limit": "Template · Audio (Alexa-ready): \"Sleep well\"",
-        "audio_notimer": "Template · Audio (Alexa-ready): \"No TV time\"",
-        "media": "Own file from the media browser (not for Alexa)",
-        "www": "Own file from the www/ folder (Alexa-ready)",
-        "url": "Own URL",
+        "auto": "Bundled announcement – matched to your device (recommended)",
+        "video_timeup": "Template – video: “TV time is over”",
+        "video_limit": "Template – video: “Sleep well”",
+        "video_notimer": "Template – video: “No TV time”",
+        "audio_timeup": "Template – audio: “TV time is over”",
+        "audio_limit": "Template – audio: “Sleep well”",
+        "audio_notimer": "Template – audio: “No TV time”",
+        "media": "Your own file from the media browser",
+        "www": "Your own file from the www/ folder",
+        "url": "Your own URL",
         "tts": "Spoken text (Alexa speaks)",
         "sound": "Built-in Alexa sound",
         "none": "No announcement – switch off immediately"
+      }
+    },
+    "alexa_sound": {
+      "options": {
+        "bell_02": "Bell",
+        "amzn_sfx_doorbell_chime_01": "Doorbell chime",
+        "amzn_sfx_doorbell_chime_02": "Doorbell chime (two-tone)",
+        "amzn_sfx_scifi_alarm_01": "Alarm tone",
+        "air_horn_03": "Air horn",
+        "clock_01": "Clock ticking"
       }
     }
   },

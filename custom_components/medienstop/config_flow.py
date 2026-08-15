@@ -31,7 +31,9 @@ from .const import (
     DEFAULT_BUNDLED,
     DEFAULT_DELAY,
     MAX_DELAY,
+    SRC_AUTO,
     SRC_MEDIA,
+    SRC_MIT_EINGABE,
     SRC_NONE,
     SRC_SOUND,
     SRC_TTS,
@@ -39,6 +41,7 @@ from .const import (
     SRC_WWW,
     as_int,
     normalize_announce,
+    sources_for_target,
     CONF_ADMIN_USERS,
     CONF_KID_DASHBOARD,
     CONF_NAMES,
@@ -161,55 +164,83 @@ def _delay_selector() -> selector.NumberSelector:
         unit_of_measurement="s"))
 
 
-def _source_selector() -> selector.SelectSelector:
-    """Ein einziges Auswahlfeld mit allen Quellen - inklusive der sechs
-    mitgelieferten Vorlagen, die der Nutzer ohne jede Einrichtung nutzen kann."""
+def _source_selector(is_alexa: bool) -> selector.SelectSelector:
+    """Auswahlfeld mit NUR den Quellen, die auf diesem Ziel funktionieren.
+
+    Frueher standen immer alle zwoelf Quellen zur Wahl - auch Videos auf einem
+    Echo oder Sprachausgabe auf einem Fernseher. Das ging erst beim Testen
+    schief. Jetzt kann man das Unpassende gar nicht mehr auswaehlen.
+    """
     return selector.SelectSelector(selector.SelectSelectorConfig(
-        options=list(ANNOUNCE_SOURCES), translation_key="announce_source",
+        options=sources_for_target(is_alexa), translation_key="announce_source",
         mode=selector.SelectSelectorMode.DROPDOWN))
 
 
 def _www_selector(files: list[str]) -> selector.SelectSelector:
+    # Kein custom_value: nur wirklich vorhandene Dateien sind waehlbar, damit
+    # ein Tippfehler nicht zu einer stummen Ansage fuehrt.
     return selector.SelectSelector(selector.SelectSelectorConfig(
-        options=files, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN))
+        options=files, mode=selector.SelectSelectorMode.DROPDOWN))
 
 
 def _sound_selector() -> selector.SelectSelector:
     return selector.SelectSelector(selector.SelectSelectorConfig(
-        options=list(ALEXA_SOUNDS), custom_value=True,
+        options=list(ALEXA_SOUNDS), translation_key="alexa_sound",
         mode=selector.SelectSelectorMode.DROPDOWN))
 
 
-def _announce_schema(key: str, cfg: dict, www_files: list[str]) -> vol.Schema:
-    """Formular fuer EINE Ansage. Alle Felder sind sichtbar; ausgewertet wird nur,
-    was zur gewaehlten Quelle passt (Home Assistant kann Felder nicht dynamisch
-    ein-/ausblenden)."""
-    src = cfg.get("src") or DEFAULT_BUNDLED.get(key, SRC_NONE)
-    cur_url = cfg.get("id", "") if cfg.get("src") == SRC_URL else ""
+def _announce_schema(key: str, cfg: dict, is_alexa: bool) -> vol.Schema:
+    """Schritt 1: nur Quelle, Verzoegerung, Testen.
+
+    Mehr braucht der Normalfall (mitgelieferte Ansage) nicht - dort ist nach
+    diesem Formular Schluss. Eigene Quellen fragen ihr EINES Feld im zweiten
+    Schritt ab, statt wie frueher alle fuenf Felder auf einmal anzuzeigen.
+    """
+    src = cfg.get("src") or DEFAULT_BUNDLED.get(key, SRC_AUTO)
+    if src not in sources_for_target(is_alexa):
+        # Gespeicherte Quelle passt nicht mehr zum Ziel (Geraet gewechselt) ->
+        # auf "automatisch" zeigen, statt eine unwaehlbare Option vorzugeben.
+        src = SRC_AUTO
     return vol.Schema({
-        vol.Required("src", default=src): _source_selector(),
-        vol.Optional("media"): _media_selector(),
-        vol.Optional("www_file",
-                     description={"suggested_value": cfg.get("file")}): _www_selector(www_files),
-        vol.Optional("url",
-                     description={"suggested_value": cur_url or None}): selector.TextSelector(),
-        vol.Optional("tts",
-                     description={"suggested_value": cfg.get("tts")}): selector.TextSelector(),
-        vol.Optional("sound",
-                     description={"suggested_value": cfg.get("sound")}): _sound_selector(),
+        vol.Required("src", default=src): _source_selector(is_alexa),
         vol.Optional("delay", default=as_int(cfg.get("delay"), DEFAULT_DELAY)): _delay_selector(),
         vol.Optional("test", default=False): selector.BooleanSelector(),
     })
 
 
-def _collect_announce(user_input: dict, cur: dict) -> dict:
+def _detail_schema(src: str, cfg: dict, www_files: list[str], delay: int) -> vol.Schema:
+    """Schritt 2: genau EIN Eingabefeld - passend zur gewaehlten Quelle."""
+    felder: dict = {}
+    if src == SRC_MEDIA:
+        felder[vol.Optional("media")] = _media_selector()
+    elif src == SRC_WWW:
+        felder[vol.Required("www_file",
+                            description={"suggested_value": cfg.get("file")})] = _www_selector(www_files)
+    elif src == SRC_URL:
+        cur_url = cfg.get("id", "") if cfg.get("src") == SRC_URL else ""
+        felder[vol.Required("url",
+                            description={"suggested_value": cur_url or None})] = selector.TextSelector()
+    elif src == SRC_TTS:
+        felder[vol.Required("tts",
+                            description={"suggested_value": cfg.get("tts")})] = selector.TextSelector()
+    elif src == SRC_SOUND:
+        felder[vol.Required("sound",
+                            description={"suggested_value": cfg.get("sound")})] = _sound_selector()
+    felder[vol.Optional("delay", default=delay)] = _delay_selector()
+    felder[vol.Optional("test", default=False)] = selector.BooleanSelector()
+    return vol.Schema(felder)
+
+
+def _collect_announce(user_input: dict, cur: dict, src: str | None = None) -> dict:
     """Baut aus den Formularwerten genau EINEN Ansage-Eintrag.
 
     Die gewaehlte Quelle bestimmt den Wert - es gibt keinen Rueckfall mehr auf
     einen alten Eintrag (frueher liess sich ein einmal gesetztes Video dadurch
     nie wieder loeschen). Zum Entfernen einfach "Keine Ansage" waehlen.
+    `src` wird im zweiten Schritt mitgegeben, wo das Feld nicht mehr im
+    Formular steht.
     """
-    src = user_input.get("src") or SRC_NONE
+    src = src or user_input.get("src") or SRC_NONE
     out: dict = {"src": src, "delay": as_int(user_input.get("delay"), DEFAULT_DELAY)}
 
     if src == SRC_MEDIA:
@@ -314,6 +345,8 @@ class MedienStopOptionsFlow(OptionsFlow):
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._entry = config_entry
+        # Zwischenspeicher fuer den zweistufigen Ansage-Dialog.
+        self._detail: dict[str, Any] = {}
 
     # --- Menue ---------------------------------------------------------------
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -400,24 +433,48 @@ class MedienStopOptionsFlow(OptionsFlow):
     async def async_step_ansage_notimer(self, user_input=None) -> ConfigFlowResult:
         return await self._ansage("notimer", user_input)
 
+    def _manager(self):
+        return self.hass.data.get(DOMAIN, {}).get(self._entry.entry_id)
+
+    def _ziel_ist_alexa(self) -> bool:
+        mgr = self._manager()
+        return bool(mgr and mgr._target_is_alexa())
+
+    async def _probe(self, key: str, cfg: dict) -> tuple[bool, str]:
+        """Spielt die noch nicht gespeicherten Werte einmal ab."""
+        mgr = self._manager()
+        if mgr is None:
+            return False, ("Die Integration wird gerade neu geladen. Bitte ein paar "
+                           "Sekunden warten und noch einmal testen.")
+        # async_announce (nicht announce): wartet den Dienst-Aufruf ab, sonst
+        # meldet der Test immer Erfolg - auch wenn gar nichts zu hoeren war.
+        return await mgr.async_announce(key, cfg)
+
     async def _ansage(self, key: str, user_input) -> ConfigFlowResult:
-        """Eine einzelne Ansage bearbeiten - mit Probe-Abspielen VOR dem Speichern."""
+        """Schritt 1 einer Ansage: nur die Quelle waehlen.
+
+        Mitgelieferte Ansagen sind damit fertig eingerichtet. Quellen mit
+        eigener Angabe (Datei, URL, Text, Klang) fuehren in `async_step_detail`
+        weiter, wo genau EIN Feld abgefragt wird.
+        """
         videos = dict(self._entry.data.get(CONF_VIDEOS, {}))
         cur = normalize_announce(videos.get(key))
-        www_files = await self.hass.async_add_executor_job(_www_mp3_files, self.hass)
+        is_alexa = self._ziel_ist_alexa()
         step_id = f"ansage_{key}"
 
         if user_input is not None:
-            cfg = _collect_announce(user_input, cur)
+            src = user_input.get("src") or SRC_NONE
+            delay = as_int(user_input.get("delay"), DEFAULT_DELAY)
+
+            if src in SRC_MIT_EINGABE:
+                # Bisherige Angabe zu DIESER Quelle als Vorbelegung mitnehmen.
+                self._detail = {"key": key, "src": src, "delay": delay, "cur": cur}
+                return await self.async_step_detail()
+
+            cfg = _collect_announce(user_input, cur, src=src)
             if user_input.get("test"):
-                # NICHT speichern: die eingegebenen Werte nur einmal abspielen und
-                # das Formular mit denselben Eingaben erneut anzeigen.
-                mgr = self.hass.data.get(DOMAIN, {}).get(self._entry.entry_id)
-                if mgr is None:
-                    ok, meldung = False, "Die Integration ist gerade nicht geladen."
-                else:
-                    ok, meldung = mgr.announce(key, cfg)
-                schema = _announce_schema(key, cfg, www_files)
+                ok, meldung = await self._probe(key, cfg)
+                schema = _announce_schema(key, cfg, is_alexa)
                 return self.async_show_form(
                     step_id=step_id,
                     data_schema=self.add_suggested_values_to_schema(schema, user_input),
@@ -429,6 +486,36 @@ class MedienStopOptionsFlow(OptionsFlow):
 
         return self.async_show_form(
             step_id=step_id,
-            data_schema=_announce_schema(key, cur, www_files),
+            data_schema=_announce_schema(key, cur, is_alexa),
             description_placeholders={"ergebnis": ""},
+        )
+
+    async def async_step_detail(self, user_input=None) -> ConfigFlowResult:
+        """Schritt 2: das eine Feld, das die gewaehlte Quelle braucht."""
+        d = self._detail
+        key, src, cur = d["key"], d["src"], d["cur"]
+        www_files = await self.hass.async_add_executor_job(_www_mp3_files, self.hass)
+
+        if src == SRC_WWW and not www_files:
+            return self.async_abort(reason="keine_www_dateien")
+
+        if user_input is not None:
+            cfg = _collect_announce(user_input, cur, src=src)
+            if user_input.get("test"):
+                ok, meldung = await self._probe(key, cfg)
+                schema = _detail_schema(src, cfg, www_files, cfg["delay"])
+                return self.async_show_form(
+                    step_id="detail",
+                    data_schema=self.add_suggested_values_to_schema(schema, user_input),
+                    errors=None if ok else {"base": "test_fehlgeschlagen"},
+                    description_placeholders={"ergebnis": meldung, "quelle": src},
+                )
+            videos = dict(self._entry.data.get(CONF_VIDEOS, {}))
+            videos[key] = cfg
+            return self._save({CONF_VIDEOS: videos})
+
+        return self.async_show_form(
+            step_id="detail",
+            data_schema=_detail_schema(src, cur, www_files, d["delay"]),
+            description_placeholders={"ergebnis": "", "quelle": src},
         )

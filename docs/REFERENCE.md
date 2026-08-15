@@ -21,8 +21,10 @@
 Ein Ansage-Eintrag hat immer `src` (Quelle) und `delay` (Sekunden bis TV-Aus), plus
 je nach Quelle ein Feld: `id`+`type` (bei `media`/`url`/Vorlagen), `file` (bei `www`,
 nur der Dateiname), `tts` oder `sound`. Mögliche `src`-Werte:
+`auto` (**Standard** — mitgelieferte Vorlage, erst zur Laufzeit als Audio oder Video
+aufgelöst; speichert außer `delay` kein weiteres Feld),
 `video_timeup|video_limit|video_notimer|audio_timeup|audio_limit|audio_notimer`
-(mitgelieferte Vorlagen), `media`, `www`, `url`, `tts`, `sound`, `none`.
+(fest gewählte Vorlagen), `media`, `www`, `url`, `tts`, `sound`, `none`.
 
 > Einträge aus ≤ 2.4.x (`{id, type, delay, tts}`) werden von `normalize_announce()`
 > beim Lesen weiterhin verstanden — es wird nichts migriert oder umgeschrieben.

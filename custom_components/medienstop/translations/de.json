@@ -119,42 +119,40 @@
       },
       "ansage_timeup": {
         "title": "Ansage: Zeit/Budget abgelaufen",
-        "description": "Wähle aus, was vor dem Ausschalten abgespielt wird. Die **mitgelieferten Vorlagen** musst du nirgends herunterladen – sie funktionieren sofort. Mit **„Jetzt testen“** hörst du die Ansage ab, ohne sie zu speichern.\n\nHinweis: Ein Alexa/Echo kann keine Videos und keine Dateien aus dem Media-Browser abspielen – dort bitte eine Audio-Vorlage, eine Datei aus `www/` oder eine Text-Ansage wählen.\n\n{ergebnis}",
+        "description": "Wähle, was vor dem Ausschalten abgespielt wird.\n\n**Mitgelieferte Ansage** ist die einfachste Wahl: MedienStop.de nimmt automatisch die richtige Datei – ein Video für den Fernseher, eine Audiodatei für Alexa. Du musst nichts herunterladen und nichts kopieren.\n\nEs werden nur Quellen angeboten, die auf deinem eingestellten Gerät auch funktionieren.\n\n{ergebnis}",
         "data": {
           "src": "Quelle der Ansage",
-          "media": "Eigene Datei aus dem Media-Browser (leer lassen = bisherige behalten)",
-          "www_file": "Eigene Datei aus dem Ordner www/ (für Alexa)",
-          "url": "Eigene URL",
-          "tts": "Text, den Alexa vorlesen soll",
-          "sound": "Eingebauter Alexa-Klang",
           "delay": "Verzögerung bis zum Ausschalten (Sek.)",
           "test": "Jetzt testen – noch nicht speichern"
         }
       },
       "ansage_limit": {
         "title": "Ansage: Zeitfenster-Ende (Schlafenszeit)",
-        "description": "Wähle aus, was vor dem Ausschalten abgespielt wird. Die **mitgelieferten Vorlagen** musst du nirgends herunterladen – sie funktionieren sofort. Mit **„Jetzt testen“** hörst du die Ansage ab, ohne sie zu speichern.\n\nHinweis: Ein Alexa/Echo kann keine Videos und keine Dateien aus dem Media-Browser abspielen – dort bitte eine Audio-Vorlage, eine Datei aus `www/` oder eine Text-Ansage wählen.\n\n{ergebnis}",
+        "description": "Wähle, was vor dem Ausschalten abgespielt wird.\n\n**Mitgelieferte Ansage** ist die einfachste Wahl: MedienStop.de nimmt automatisch die richtige Datei – ein Video für den Fernseher, eine Audiodatei für Alexa. Du musst nichts herunterladen und nichts kopieren.\n\nEs werden nur Quellen angeboten, die auf deinem eingestellten Gerät auch funktionieren.\n\n{ergebnis}",
         "data": {
           "src": "Quelle der Ansage",
-          "media": "Eigene Datei aus dem Media-Browser (leer lassen = bisherige behalten)",
-          "www_file": "Eigene Datei aus dem Ordner www/ (für Alexa)",
-          "url": "Eigene URL",
-          "tts": "Text, den Alexa vorlesen soll",
-          "sound": "Eingebauter Alexa-Klang",
           "delay": "Verzögerung bis zum Ausschalten (Sek.)",
           "test": "Jetzt testen – noch nicht speichern"
         }
       },
       "ansage_notimer": {
         "title": "Ansage: Kein Timer / außerhalb der Zeit",
-        "description": "Wähle aus, was vor dem Ausschalten abgespielt wird. Die **mitgelieferten Vorlagen** musst du nirgends herunterladen – sie funktionieren sofort. Mit **„Jetzt testen“** hörst du die Ansage ab, ohne sie zu speichern.\n\nHinweis: Ein Alexa/Echo kann keine Videos und keine Dateien aus dem Media-Browser abspielen – dort bitte eine Audio-Vorlage, eine Datei aus `www/` oder eine Text-Ansage wählen.\n\n{ergebnis}",
+        "description": "Wähle, was vor dem Ausschalten abgespielt wird.\n\n**Mitgelieferte Ansage** ist die einfachste Wahl: MedienStop.de nimmt automatisch die richtige Datei – ein Video für den Fernseher, eine Audiodatei für Alexa. Du musst nichts herunterladen und nichts kopieren.\n\nEs werden nur Quellen angeboten, die auf deinem eingestellten Gerät auch funktionieren.\n\n{ergebnis}",
         "data": {
           "src": "Quelle der Ansage",
-          "media": "Eigene Datei aus dem Media-Browser (leer lassen = bisherige behalten)",
-          "www_file": "Eigene Datei aus dem Ordner www/ (für Alexa)",
-          "url": "Eigene URL",
+          "delay": "Verzögerung bis zum Ausschalten (Sek.)",
+          "test": "Jetzt testen – noch nicht speichern"
+        }
+      },
+      "detail": {
+        "title": "Ansage: eigene Angabe",
+        "description": "Nur noch diese eine Angabe fehlt.\n\nMit **„Jetzt testen“** hörst du das Ergebnis, ohne zu speichern.\n\n{ergebnis}",
+        "data": {
+          "media": "Datei aus dem Media-Browser (leer lassen = bisherige behalten)",
+          "www_file": "Datei aus dem Ordner www/",
+          "url": "Adresse der Datei (https://…)",
           "tts": "Text, den Alexa vorlesen soll",
-          "sound": "Eingebauter Alexa-Klang",
+          "sound": "Alexa-Klang",
           "delay": "Verzögerung bis zum Ausschalten (Sek.)",
           "test": "Jetzt testen – noch nicht speichern"
         }
@@ -164,7 +162,8 @@
       "test_fehlgeschlagen": "Die Ansage konnte nicht abgespielt werden – Einzelheiten stehen oben."
     },
     "abort": {
-      "keine_benutzer": "Es gibt keine Home-Assistant-Benutzer, denen Tabs zugeordnet werden könnten."
+      "keine_benutzer": "Es gibt keine Home-Assistant-Benutzer, denen Tabs zugeordnet werden könnten.",
+      "keine_www_dateien": "Im Ordner `www/` liegt keine Audio-/Videodatei. Lege dort eine Datei ab (z. B. über den Datei-Editor) oder wähle eine mitgelieferte Ansage."
     }
   },
   "selector": {
@@ -176,18 +175,29 @@
     },
     "announce_source": {
       "options": {
-        "video_timeup": "Vorlage · Video: „Fernsehzeit vorbei“",
-        "video_limit": "Vorlage · Video: „Schlaft gut“",
-        "video_notimer": "Vorlage · Video: „Keine TV-Zeit“",
-        "audio_timeup": "Vorlage · Audio (auch für Alexa): „Fernsehzeit vorbei“",
-        "audio_limit": "Vorlage · Audio (auch für Alexa): „Schlaft gut“",
-        "audio_notimer": "Vorlage · Audio (auch für Alexa): „Keine TV-Zeit“",
-        "media": "Eigene Datei aus dem Media-Browser (nicht für Alexa)",
-        "www": "Eigene Datei aus dem Ordner www/ (auch für Alexa)",
+        "auto": "Mitgelieferte Ansage – passend zum Gerät (empfohlen)",
+        "video_timeup": "Vorlage – Video: „Fernsehzeit vorbei“",
+        "video_limit": "Vorlage – Video: „Schlaft gut“",
+        "video_notimer": "Vorlage – Video: „Keine TV-Zeit“",
+        "audio_timeup": "Vorlage – Audio: „Fernsehzeit vorbei“",
+        "audio_limit": "Vorlage – Audio: „Schlaft gut“",
+        "audio_notimer": "Vorlage – Audio: „Keine TV-Zeit“",
+        "media": "Eigene Datei aus dem Media-Browser",
+        "www": "Eigene Datei aus dem Ordner www/",
         "url": "Eigene URL",
         "tts": "Text-Ansage (Alexa spricht)",
         "sound": "Eingebauter Alexa-Klang",
         "none": "Keine Ansage – sofort ausschalten"
+      }
+    },
+    "alexa_sound": {
+      "options": {
+        "bell_02": "Glocke",
+        "amzn_sfx_doorbell_chime_01": "Türgong",
+        "amzn_sfx_doorbell_chime_02": "Türgong (zweiklang)",
+        "amzn_sfx_scifi_alarm_01": "Alarmton",
+        "air_horn_03": "Lufthorn",
+        "clock_01": "Uhr-Ticken"
       }
     }
   },

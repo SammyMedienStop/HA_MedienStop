@@ -3,6 +3,60 @@
 Chronologie der wichtigsten Fixes mit **Symptom → Ursache → Lösung**. Ergänzt die
 nutzerseitige `CHANGELOG.md` um das „Warum".
 
+## [2.5.1] Alexa blieb stumm — SSML ohne `<speak>`-Rahmen
+- **Symptom:** Audio-Vorlage auf einem Echo ausgewählt, „Jetzt testen" angehakt,
+  abgeschickt — **kein Ton**, keine Fehlermeldung, nichts im Protokoll. Der Dialog
+  meldete sogar Erfolg.
+- **Ursache:** `_speak_audio_url()` schickte `<audio src='…'/>` **ohne** umschließendes
+  `<speak>…</speak>`. Der Alexa Media Player erkennt eine Nachricht nur dann als SSML,
+  wenn sie in `<speak>` steht; andernfalls verwirft Amazon den `<audio>`-Tag
+  kommentarlos. `notify.alexa_media` liefert dabei weiterhin HTTP 200 — der Fehlschlag
+  ist von außen nicht sichtbar. (Verifiziert gegen eine echte Instanz: alle drei
+  Varianten HTTP 200, hörbar war nur die Fassung mit `<speak>`.)
+- **Lösung:** `_ssml_audio()` baut `<speak><audio src="…"/></speak>`, maskiert `&`/`<`/`>`
+  in der URL (ein Query-Parameter machte das SSML sonst ungültig — ebenfalls stiller
+  Fehlschlag) und setzt die URL in doppelte Anführungszeichen. `target` wird jetzt als
+  Liste übergeben, wie `notify.alexa_media` es erwartet.
+
+## [2.5.1] „Jetzt testen" konnte gar nicht fehlschlagen
+- **Symptom:** Der Test-Knopf meldete ausnahmslos Erfolg — auch wenn kein Ton kam, das
+  Zielgerät nicht existierte oder `notify.alexa_media` gar nicht installiert war.
+  Dadurch war jede Fehlersuche blind.
+- **Ursache:** `announce()` rief `_speak()`/`_play_media()`, die den Dienst-Aufruf nur
+  per `async_create_task` **anstoßen** und sofort zurückkehren. Der Rückgabewert hieß
+  faktisch „abgeschickt", wurde aber als „hat geklappt" ausgegeben. Fehler landeten
+  bestenfalls in einer persistent_notification, die im Optionsdialog niemand sieht.
+- **Lösung:** Entscheidung und Ausführung getrennt: `_announce_plan()` liefert ohne
+  Seiteneffekt, *was* zu tun ist; `announce()` bleibt der beiläufige Weg für die
+  Abschaltsequenz (dort darf nichts blockieren), neu ist `async_announce()`, das den
+  Dienst-Aufruf **abwartet** und den echten Fehlertext zurückgibt. Options-Flow und
+  `medienstop.test_video` nutzen die await-Variante; `notify_on_error=False`
+  unterdrückt dort die doppelte Benachrichtigung.
+
+## [2.5.1] Totes Zielgerät — Ansagen verschwanden spurlos
+- **Symptom:** Alle Ansagen wirkungslos, obwohl Konfiguration und Alexa-Integration in
+  Ordnung waren.
+- **Ursache:** Als Video-Player war ein Gerät eingetragen, dessen Entity `unavailable`
+  war. `media_player.play_media` bzw. `notify.alexa_media` nehmen einen solchen Aufruf
+  klaglos entgegen — es passiert nur nichts. Da `media_target()` den Video-Player dem
+  Fernseher vorzieht, ging **jede** Ansage an dieses tote Gerät.
+- **Lösung:** `_announce_plan()` prüft den Zustand des Ziels: fehlende Entity und
+  `unavailable`/`unknown` führen zu einer erklärenden Absage. `off` bleibt zulässig —
+  `play_media` kann einen ausgeschalteten Fernseher aufwecken.
+
+## [2.5.1] Ansage-Dialog verleitete zu unmöglichen Kombinationen
+- **Symptom:** Man konnte am Echo eine Video-Vorlage wählen oder am Fernseher eine
+  Text-Ansage; acht Eingabefelder standen gleichzeitig da, von denen nur eines zählte.
+- **Ursache:** Ein einziges statisches Formular mit allen Quellen und allen Feldern —
+  Home Assistant kann Felder nicht dynamisch ein-/ausblenden, also wurde alles gezeigt.
+- **Lösung:** Dreifach entschärft. (a) Neue Quelle `SRC_AUTO` („Mitgelieferte Ansage"),
+  die erst zur Laufzeit über `bundled_for(reason, audio=is_alexa)` in Video oder Audio
+  aufgelöst wird — dadurch ist die Kombination nie falsch und folgt einem Gerätewechsel
+  automatisch. (b) `sources_for_target()` filtert die Auswahlliste nach dem Ziel, statt
+  erst beim Test abzulehnen. (c) Der Dialog ist zweistufig: Schritt 1 nur Quelle,
+  Verzögerung, Test; Quellen aus `SRC_MIT_EINGABE` führen in `async_step_detail` mit
+  genau einem Feld. Bei den Vorlagen entfällt der zweite Schritt.
+
 ## [2.5.0] Alexa konnte keine eigenen Audiodateien abspielen
 - **Symptom:** Ein als Video-Player eingetragenes Echo blieb bei Datei-Ansagen stumm;
   der Media-Browser meldete „Mediaplayer unterstützt kein Auswählen aus Medienquellen".
