@@ -226,10 +226,21 @@ Test-Knopf. Alternativ die Aktion `medienstop.test_video`
 (Entwicklerwerkzeuge → Aktionen).
 
 > [!WARNING]
-> **Öffnet sich der Browser statt des Videos?** (Panasonic, Samsung, LG, Android-TV)
-> → wähle einen **Cast/Chromecast**- oder **DLNA-Renderer**-`media_player` als
-> „Video-Player". Für reine **Audio**-Ansagen kannst du auch einen Lautsprecher als
-> Ziel nehmen.
+> **Bleibt der Bildschirm schwarz oder öffnet sich der Browser?** (Panasonic, Samsung,
+> LG, Android-TV) → Diese Fernseher nehmen den Abspiel-Befehl zwar an, streamen aber
+> nicht. Wähle als **„Video-Player"** einen **Cast/Chromecast** oder den
+> **DLNA-Renderer** deines Fernsehers. Achtung: Der DLNA-Eintrag erscheint in Home
+> Assistant oft **erst, wenn der Fernseher eingeschaltet ist**. Für reine
+> **Audio**-Ansagen genügt auch ein Lautsprecher als Ziel.
+
+> [!NOTE]
+> **Warum liegen Videos in `config/www/medienstop/`?** Viele Fernseher und
+> DLNA-Empfänger kommen mit `https://`-Adressen nicht zurecht und bleiben dann stumm.
+> MedienStop.de holt die mitgelieferten Vorlagen deshalb **einmalig** beim Start von
+> Home Assistant in dein Heimnetz (rund 30 MB für die drei Videos) und spielt sie von
+> dort per `http://` ab. Das läuft im Hintergrund und verzögert den Start nicht. Für
+> **Alexa** wird nichts geladen – dort holt Amazon die Datei selbst und braucht dafür
+> gerade die öffentliche Adresse.
 
 ## 🗣️ Ansagen über Alexa/Echo
 

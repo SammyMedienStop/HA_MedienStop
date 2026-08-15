@@ -3,6 +3,45 @@
 Chronologie der wichtigsten Fixes mit **Symptom → Ursache → Lösung**. Ergänzt die
 nutzerseitige `CHANGELOG.md` um das „Warum".
 
+## [2.5.2] Fernseher spielte die Vorlage nicht — DLNA-Renderer kann kein HTTPS
+- **Symptom:** Test-Knopf gedrückt, Integration meldet Erfolg, Bildschirm bleibt
+  schwarz. Am Echo lief dieselbe Ansage einwandfrei.
+- **Ursache:** Zwei Schichten. (a) Das eingetragene Ziel war die
+  `panasonic_viera`-Entity — die nimmt `play_media` an, streamt aber nicht (bekanntes
+  Muster bei Panasonic/Samsung/LG/AndroidTV, siehe Gotcha 6). Der eigentliche Abspieler
+  ist der **`dlna_dmr`**-Renderer, der erst existiert, wenn der TV **an** ist.
+  (b) Auch mit richtigem Ziel blieb es schwarz: Der Renderer holt sich `https://`-URLs
+  nicht. Direkt gegengemessen — identische Datei, identisches Ziel:
+  `http://<ha>:8123/local/…` → `state=playing`, `https://raw.githubusercontent.com/…`
+  → `state=idle`. `media_player.play_media` liefert in **beiden** Fällen HTTP 200; der
+  Fehlschlag ist von HA aus nicht erkennbar. Bei Alexa fällt das nie auf, weil dort
+  Amazons Server lädt und HTTPS gerade **verlangt**.
+- **Lösung:** `_vorlage_aus_dem_heimnetz()` legt eine mitgelieferte Vorlage einmalig
+  unter `<config>/www/medienstop/` ab (atomar über `.teil` + `os.replace`, damit ein
+  Abbruch keine halbe Datei hinterlässt) und liefert die `http://`-Adresse aus
+  `get_url(prefer_external=False)`. Greift nur für `BUNDLED_MEDIA`-URLs und nur im
+  `play`-Zweig — der Alexa-Zweig (`speak_ssml`) behält die GitHub-Adresse. Jeder
+  Fehler fällt auf die Original-URL zurück, also nie schlechter als vorher.
+  `_async_play_media` gibt zusätzlich die **tatsächlich** genutzte Adresse zurück,
+  damit der Test-Knopf nicht die GitHub-URL anzeigt, während lokal abgespielt wird.
+
+## [2.5.2] Download traf genau den falschen Moment
+- **Symptom:** Die erste Ansage nach einer Neuinstallation kam mit spürbarer
+  Verzögerung — im Zweifel erst, nachdem der Fernseher schon aus war.
+- **Ursache:** Die lokale Kopie entstand **lazy**, also beim ersten Abspielen. Genau
+  dann läuft aber schon die Abschalt-Verzögerung (Standard 10 s, hier 20 s) gegen
+  einen 10-MB-Download.
+- **Lösung:** `async_vorlagen_vorladen()` wird in `async_setup_entry` per
+  `entry.async_create_background_task` angestoßen — **nach** `start_clock()` und
+  bewusst als Task, damit der HA-Start nicht auf das Netz wartet (gemessen: HA nach
+  21 s bedienbar, 29 MB nach 44 s vollständig). Ein Reload nach Konfigurationsänderung
+  wiederholt es, sodass ein Wechsel des Zielgeräts nachzieht. Geladen wird nur, was die
+  aktuelle Konfiguration braucht; Alexa-Ziele und eigene Quellen lösen nichts aus.
+- **Merke für die Fehlersuche:** Auf dieser Instanz ist die Datei-Protokollierung
+  abgeschaltet (`home-assistant.log` existiert nicht, `/api/error_log` liefert 404).
+  Diagnose läuft deshalb über den Options-Flow (`description_placeholders["ergebnis"]`)
+  und über Zustandsabfragen, nicht über das Log.
+
 ## [2.5.1] Alexa blieb stumm — SSML ohne `<speak>`-Rahmen
 - **Symptom:** Audio-Vorlage auf einem Echo ausgewählt, „Jetzt testen" angehakt,
   abgeschickt — **kein Ton**, keine Fehlermeldung, nichts im Protokoll. Der Dialog

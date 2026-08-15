@@ -111,6 +111,24 @@ Vor allem anderen prüft `_announce_plan()` den **Zustand des Ziels**: Eine fehl
 Entity oder `unavailable`/`unknown` führt zur Absage mit Klartext. `off` bleibt
 zulässig, weil `play_media` einen ausgeschalteten Fernseher aufwecken kann.
 
+## Vorlagen kommen aus dem Heimnetz (seit 2.5.2)
+Viele Fernseher und **DLNA-Renderer können kein HTTPS** — sie nehmen `play_media` an
+und tun nichts, HTTP 200 inklusive. Deshalb gilt im `play`-Zweig:
+`_vorlage_aus_dem_heimnetz()` legt eine `BUNDLED_MEDIA`-Datei einmalig unter
+`<config>/www/medienstop/` ab und liefert die `http://`-Adresse aus
+`get_url(prefer_external=False)`. Geschrieben wird atomar (`.teil` → `os.replace`),
+damit ein Abbruch keine halbe Datei hinterlässt, die später als „schon da" gilt.
+Jeder Fehler fällt auf die Original-URL zurück.
+
+Der **Alexa-Zweig geht diesen Weg nicht**: Amazons Server lädt selbst und verlangt
+gerade die öffentliche HTTPS-Adresse.
+
+`async_vorlagen_vorladen()` zieht den Download in den Start vor
+(`entry.async_create_background_task` in `async_setup_entry`, nach `start_clock()`).
+Sonst fiele er mitten in eine Abschaltung, während die Verzögerung schon läuft.
+Geladen wird nur, was die Konfiguration braucht — bei Alexa-Zielen und eigenen
+Quellen gar nichts.
+
 ## Warum Alexa einen Sonderweg braucht
 Ein Echo kann per `media_player.play_media` **keine** beliebigen Dateien abspielen.
 Der einzige Weg ist ein SSML-`<audio>`-Tag; Amazons Server lädt die Datei dann

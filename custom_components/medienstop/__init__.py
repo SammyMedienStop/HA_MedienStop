@@ -627,14 +627,112 @@ class MedienStopManager:
             return
         self.hass.async_create_task(self._async_play_media(url, content_type))
 
+    async def _vorlage_aus_dem_heimnetz(self, url: str) -> str:
+        """Liefert eine mitgelieferte Vorlage ueber das Heimnetz statt ueber GitHub.
+
+        Hintergrund: Viele Fernseher und DLNA-Renderer koennen **kein HTTPS**
+        (verifiziert mit einem Panasonic Viera: dieselbe Datei per http:// aus
+        dem Heimnetz laeuft, per https:// von GitHub bleibt das Geraet stumm -
+        ohne Fehlermeldung, weil der Renderer den Auftrag trotzdem annimmt).
+        Deshalb wird die Datei einmalig nach <config>/www/medienstop/ geholt und
+        von dort per http:// ausgeliefert.
+
+        Alexa geht diesen Weg NICHT: Amazons Server laedt die Datei selbst aus
+        dem Internet und braucht dafuer gerade die oeffentliche HTTPS-Adresse.
+
+        Klappt etwas nicht, wird die Original-URL zurueckgegeben - dann ist das
+        Verhalten wie bisher, statt gar keiner Ansage.
+        """
+        import os
+
+        if url not in {u for u, _ in BUNDLED_MEDIA.values()}:
+            return url
+        name = url.rsplit("/", 1)[-1]
+        ordner = self.hass.config.path("www", "medienstop")
+        ziel = os.path.join(ordner, name)
+
+        def _vorhanden() -> bool:
+            return os.path.isfile(ziel) and os.path.getsize(ziel) > 0
+
+        try:
+            if not await self.hass.async_add_executor_job(_vorhanden):
+                _LOGGER.warning("MedienStop.de holt die Vorlage %s einmalig ins Heimnetz", name)
+                session = async_get_clientsession(self.hass)
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=120)) as antwort:
+                    antwort.raise_for_status()
+                    daten = await antwort.read()
+
+                def _schreiben() -> None:
+                    os.makedirs(ordner, exist_ok=True)
+                    # Erst daneben schreiben, dann umbenennen: ein Abbruch
+                    # hinterlaesst so keine halbe Datei, die spaeter als
+                    # "schon vorhanden" durchgeht.
+                    vorlaeufig = ziel + ".teil"
+                    with open(vorlaeufig, "wb") as fh:
+                        fh.write(daten)
+                    os.replace(vorlaeufig, ziel)
+
+                await self.hass.async_add_executor_job(_schreiben)
+
+            from homeassistant.helpers.network import NoURLAvailableError, get_url
+            try:
+                basis = get_url(self.hass, prefer_external=False, allow_internal=True)
+            except NoURLAvailableError:
+                return url
+            return f"{basis.rstrip('/')}/local/medienstop/{name}"
+        except Exception as err:  # pragma: no cover - Netz/Dateisystem
+            _LOGGER.warning("Vorlage %s konnte nicht lokal bereitgestellt werden (%s) - "
+                            "nutze die Adresse von GitHub", name, err)
+            return url
+
+    async def async_vorlagen_vorladen(self) -> None:
+        """Holt die gebrauchten Vorlagen beim Start einmalig ins Heimnetz.
+
+        Ohne diesen Schritt faende der Download erst statt, wenn die Ansage
+        WIRKLICH gebraucht wird - also mitten in einer Abschaltung. Bei einer
+        langsamen Leitung liefe die Abschalt-Verzoegerung dann ab, bevor das
+        Video ueberhaupt zu sehen war.
+
+        Geladen wird nur, was zum eingestellten Ziel passt:
+        * Alexa braucht die oeffentliche HTTPS-Adresse -> gar kein Download.
+        * Fernseher/Cast bekommen die Datei aus dem Heimnetz -> vorladen.
+        Fehler sind unkritisch: `_vorlage_aus_dem_heimnetz` faellt auf die
+        Adresse von GitHub zurueck, es wird dann eben spaeter geladen.
+        """
+        if not self.media_target() or self._target_is_alexa():
+            return
+        gebraucht: set[str] = set()
+        for reason in ANNOUNCE_KEYS:
+            src = normalize_announce(self.media_cfg.get(reason)).get("src")
+            if src == SRC_AUTO:
+                src = bundled_for(reason, audio=False)
+            if src in BUNDLED_MEDIA:
+                gebraucht.add(BUNDLED_MEDIA[src][0])
+        if not gebraucht:
+            return
+        fertig = 0
+        for url in sorted(gebraucht):
+            if (await self._vorlage_aus_dem_heimnetz(url)) != url:
+                fertig += 1
+        _LOGGER.warning("MedienStop.de: %s von %s Vorlagen liegen im Heimnetz bereit",
+                        fertig, len(gebraucht))
+
     async def _async_play_media(self, url: str, content_type: str | None,
-                                notify_on_error: bool = True) -> tuple[bool, str]:
-        """-> (geklappt, Fehlertext). `notify_on_error=False`, wenn der Aufrufer
-        den Fehler selbst anzeigt (Test-Knopf im Dialog)."""
+                                notify_on_error: bool = True) -> tuple[bool, str, str]:
+        """-> (geklappt, Fehlertext, tatsaechlich genutzte Adresse).
+
+        Die genutzte Adresse kann von der uebergebenen abweichen, weil Vorlagen
+        fuer Fernseher aus dem Heimnetz ausgeliefert werden - der Test-Knopf soll
+        zeigen, was wirklich abgespielt wurde.
+        `notify_on_error=False`, wenn der Aufrufer den Fehler selbst anzeigt.
+        """
         # media-source:// und http(s) werden DIREKT an den media_player geschickt.
         # Home Assistant loest media-source fuer das Zielgeraet selbst auf.
         target = self.media_target()
         ctype = content_type or self._media_type(url)
+        # Vorlagen ueber das Heimnetz ausliefern - viele TVs koennen kein HTTPS.
+        if url.startswith("https://"):
+            url = await self._vorlage_aus_dem_heimnetz(url)
         _LOGGER.warning("MedienStop.de play_media -> Ziel=%s, id=%s, typ=%s", target, url, ctype)
         try:
             await self.hass.services.async_call(
@@ -652,8 +750,8 @@ class MedienStopManager:
                     "message": (f"Abspielen auf **{target}** fehlgeschlagen:\n{err}\n\n"
                                 "Ist das die richtige (media_player-)Entitaet und das Geraet an?"),
                     "notification_id": "medienstop_video_err"}, blocking=False)
-            return False, text
-        return True, ""
+            return False, text, url
+        return True, "", url
 
     @staticmethod
     def _ssml_audio(url: str) -> str:
@@ -909,7 +1007,14 @@ class MedienStopManager:
         if art == "nein":
             return False, meldung
         if art == "play":
-            ok, fehler = await self._async_play_media(payload, ctype, notify_on_error=False)
+            ok, fehler, genutzt = await self._async_play_media(payload, ctype,
+                                                               notify_on_error=False)
+            if ok and genutzt != payload:
+                # Vorlage kam aus dem Heimnetz statt von GitHub -> das soll in der
+                # Rueckmeldung stehen, sonst zeigt der Test eine Adresse an, die
+                # gar nicht abgespielt wurde.
+                meldung = (f"{meldung.split(chr(10))[0]}\n{genutzt}\n"
+                           "(Vorlage aus dem Heimnetz - viele Fernseher koennen kein HTTPS.)")
         else:
             ok, fehler = await self._async_speak(payload, ssml=(art == "speak_ssml"),
                                                  notify_on_error=False)
@@ -1162,6 +1267,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     manager.start_clock()
     _async_register_services(hass)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    # Vorlagen im Hintergrund ins Heimnetz holen - NACH start_clock und als
+    # eigener Task, damit der Start von Home Assistant nicht auf den Download
+    # wartet. Laeuft auch nach jeder Konfigurationsaenderung erneut (die loest
+    # einen Reload aus), sodass ein Wechsel des Zielgeraets nachzieht.
+    entry.async_create_background_task(
+        hass, manager.async_vorlagen_vorladen(), "medienstop_vorlagen_vorladen")
     return True
 
 

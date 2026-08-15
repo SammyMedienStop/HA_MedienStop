@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.5.2
+- **Fix (wichtig): Videos liefen auf vielen Fernsehern nicht.** Die mitgelieferten
+  Videos wurden dem Fernseher als `https://`-Adresse übergeben – **viele Fernseher und
+  DLNA-Empfänger können aber kein HTTPS**. Sie nehmen den Auftrag entgegen und tun
+  dann nichts, ohne Fehlermeldung. (Nachgewiesen an einem Panasonic Viera: dieselbe
+  Datei aus dem Heimnetz läuft, von GitHub nicht.) MedienStop.de legt die Vorlagen
+  jetzt unter `config/www/medienstop/` ab und spielt sie **aus deinem Heimnetz** ab.
+- **Neu: Vorlagen werden beim Start vorgeladen.** Der Download läuft einmalig im
+  Hintergrund, sobald Home Assistant startet – nicht erst dann, wenn die Ansage
+  gebraucht wird. Sonst liefe bei langsamer Leitung die Abschalt-Verzögerung ab,
+  bevor das Video überhaupt zu sehen war. Der Start von Home Assistant wird dadurch
+  **nicht** verzögert.
+  * Nur für Fernseher/Cast – bei **Alexa** wird nichts geladen, dort braucht Amazon
+    weiterhin die öffentliche Adresse.
+  * Nur was gebraucht wird: eigene Dateien oder Text-Ansagen lösen keinen Download aus.
+  * Klappt der Download nicht, wird wie bisher die Adresse von GitHub genutzt.
+- **Fix:** Der Test zeigte die Adresse von GitHub an, obwohl in Wahrheit die Datei aus
+  dem Heimnetz abgespielt wurde. Jetzt steht dort, was tatsächlich lief.
+
 ## 2.5.1
 - **Fix (wichtig): Ansagen auf Alexa blieben stumm.** Die Audiodatei wurde ohne den
   vorgeschriebenen `<speak>`-Rahmen an Alexa geschickt – Amazon verwarf sie dann
