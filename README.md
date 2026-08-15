@@ -96,11 +96,24 @@ Mehr Screenshots im Ordner [`docs/screenshots/`](docs/screenshots/).
 
 ### Variante B – Manuell (ohne HACS)
 1. Im [neuesten Release][releases] die Datei `medienstop-x.y.z.zip` herunterladen
-   und entpacken.
-2. Den Ordner `custom_components/medienstop/` in deinen Home-Assistant-Konfigurations-
-   ordner kopieren, sodass `…/config/custom_components/medienstop/` entsteht.
-   (Den Ordner `custom_components` ggf. selbst anlegen.)
+   und entpacken. Darin liegt **ein** Ordner namens `medienstop`.
+2. Diesen Ordner `medienstop` in den Ordner `custom_components` deiner
+   Home-Assistant-Konfiguration kopieren, sodass genau dieser Pfad entsteht:
+
+   ```
+   config/custom_components/medienstop/manifest.json
+   ```
+
+   Den Ordner `custom_components` ggf. vorher selbst anlegen. Er liegt neben deiner
+   `configuration.yaml` – erreichbar z. B. über das Add-on *Samba share*, *Studio Code
+   Server* oder *File editor*.
 3. Home Assistant **neu starten**.
+
+> [!TIP]
+> Ob es geklappt hat, siehst du unter *Einstellungen → Geräte & Dienste →
+> **Integration hinzufügen***: Dort muss „MedienStop.de" jetzt auftauchen. Erscheint
+> es nicht, stimmt meist der Pfad nicht – häufigster Fehler ist ein Ordner zu tief,
+> also `custom_components/medienstop/medienstop/`.
 
 ## 🚀 Einrichtung
 
@@ -159,34 +172,46 @@ mit eigener Quelle und eigener Verzögerung:
 | **Schlafenszeit** | erlaubte Endzeit erreicht (z. B. 20 Uhr) | „Schlaft gut" |
 | **Keine TV-Zeit** | TV außerhalb der Zeit / ohne Timer gestartet | „Keine TV-Zeit" |
 
-### ✅ Einfachster Weg: mitgelieferte Ansage auswählen
+### ✅ Einfachster Weg: „Mitgelieferte Ansage" stehen lassen
 
-Seit Version 2.5.0 musst du **nichts mehr herunterladen und nichts kopieren**:
+Du musst **nichts herunterladen, nichts kopieren und nichts über Dateiformate wissen**:
 
 1. *Einstellungen → Geräte & Dienste → **MedienStop.de** → **Konfigurieren***.
 2. Den Punkt für den gewünschten Fall wählen, z. B. **„Ansage: Zeit/Budget
    abgelaufen"**.
-3. Unter **„Quelle der Ansage"** eine der fertigen Vorlagen auswählen:
-   * **Vorlage · Video** – für Fernseher, Chromecast und DLNA.
-   * **Vorlage · Audio** – zusätzlich für **Alexa/Echo** geeignet.
+3. Unter **„Quelle der Ansage"** steht bereits **„Mitgelieferte Ansage – passend zum
+   Gerät"**. Das ist die Voreinstellung und in aller Regel genau richtig.
 4. Häkchen bei **„Jetzt testen – noch nicht speichern"** setzen und absenden: Die
-   Ansage wird sofort abgespielt, **ohne** etwas zu speichern. Passt sie, das Häkchen
-   entfernen und erneut absenden – erst dann wird gespeichert.
+   Ansage wird sofort abgespielt, **ohne** etwas zu speichern. Der Dialog schreibt dir
+   danach, was passiert ist – und bei einem Problem auch, **woran** es lag. Passt
+   alles, das Häkchen entfernen und erneut absenden; erst dann wird gespeichert.
+
+> [!TIP]
+> **Warum „passend zum Gerät"?** MedienStop.de sucht die Datei selbst aus: ein
+> **Video** für den Fernseher, eine **Audiodatei** für einen Echo – und dazu die zum
+> Anlass passende Ansage. Wechselst du später das Zielgerät, zieht die Ansage von
+> allein nach. Du kannst eine bestimmte Vorlage auch weiterhin fest auswählen.
+
+Es werden dir außerdem **nur Quellen angeboten, die auf deinem Gerät funktionieren**:
+An einem Echo tauchen die Video-Vorlagen gar nicht erst auf, an einem Fernseher keine
+Text-Ansage. Eine unmögliche Kombination lässt sich also nicht einstellen.
 
 Jeder Fall wird **einzeln** gespeichert; die beiden anderen Ansagen und alle übrigen
 Einstellungen bleiben dabei unberührt.
 
 ### 📥 Eigene Dateien verwenden
 
-Du kannst statt der Vorlagen auch eigene Ansagen nutzen:
+Statt der Vorlagen kannst du auch eigene Ansagen nutzen. Wählst du eine dieser
+Quellen, fragt der Dialog **im nächsten Schritt genau die eine passende Angabe** ab –
+du siehst nie Felder, die du nicht brauchst.
 
 | Quelle | Wofür |
 |---|---|
-| **Eigene Datei aus dem Media-Browser** | Fernseher/Chromecast. Datei nach `…/config/media/` kopieren und im Browser auswählen. **Für Alexa nicht möglich.** |
-| **Eigene Datei aus dem Ordner `www/`** | Auch für **Alexa** – Datei nach `…/config/www/` legen, die Internet-Adresse bildet MedienStop.de selbst. |
+| **Eigene Datei aus dem Media-Browser** | Fernseher/Chromecast. Datei nach `…/config/media/` kopieren und im Browser auswählen. **Für Alexa nicht möglich** (wird dort auch nicht angeboten). |
+| **Eigene Datei aus dem Ordner `www/`** | Auch für **Alexa** – Datei nach `…/config/www/` legen, die Internet-Adresse bildet MedienStop.de selbst. Ausgewählt wird aus einer Liste der vorhandenen Dateien, damit kein Tippfehler möglich ist. |
 | **Eigene URL** | Beliebige Adresse im Internet. |
-| **Text-Ansage** | Alexa liest einen frei eingegebenen Satz vor. |
-| **Eingebauter Alexa-Klang** | Glocke, Türgong usw. direkt von Amazon. |
+| **Text-Ansage** | Alexa liest einen frei eingegebenen Satz vor (nur an einem Echo). |
+| **Eingebauter Alexa-Klang** | Glocke, Türgong usw. direkt von Amazon (nur an einem Echo). |
 | **Keine Ansage** | Fernseher geht sofort aus. |
 
 > [!IMPORTANT]
@@ -216,8 +241,8 @@ Text**, als **Audiodatei** oder als **eingebauter Alexa-Klang**.
    eingerichtet sein und deinen Echo als `media_player`-Entity bereitstellen.
 2. Diese Entity unter *MedienStop.de → Konfigurieren → Grundeinstellungen* als
    **„Video-Player"** auswählen (genau wie einen Chromecast).
-3. Beim gewünschten Fall unter **„Quelle der Ansage"** wählen:
-   * **Vorlage · Audio** – die mitgelieferte MP3, sofort einsatzbereit.
+3. Beim gewünschten Fall genügt **„Mitgelieferte Ansage – passend zum Gerät"**:
+   MedienStop.de nimmt dann automatisch die Alexa-taugliche MP3. Alternativ:
    * **Text-Ansage** – ein frei eingegebener Satz, den Alexa vorliest.
    * **Eingebauter Alexa-Klang** – z. B. Glocke oder Türgong.
    * **Eigene Datei aus dem Ordner `www/`** – siehe
@@ -228,9 +253,15 @@ Text**, als **Audiodatei** oder als **eingebauter Alexa-Klang**.
 
 > [!NOTE]
 > **Videos und Dateien aus dem Media-Browser kann ein Echo grundsätzlich nicht
-> abspielen** – das liegt an Amazon, nicht an MedienStop.de. MedienStop.de erkennt
-> das und weist dich mit einem Hinweis auf die passende Alternative hin, statt
-> wortlos nichts zu tun.
+> abspielen** – das liegt an Amazon, nicht an MedienStop.de. Diese Quellen werden an
+> einem Echo deshalb gar nicht erst zur Auswahl gestellt.
+
+> [!IMPORTANT]
+> **Das Zielgerät muss erreichbar sein.** Steht als Fernseher oder Video-Player eine
+> Entität, die gerade `unavailable` ist oder gar nicht mehr existiert, nimmt Home
+> Assistant den Abspiel-Befehl klaglos entgegen – es passiert nur nichts. Der
+> Test-Knopf sagt dir das seit Version 2.5.1 im Klartext. Ein bloß **ausgeschalteter**
+> Fernseher ist dagegen kein Problem, den kann Home Assistant aufwecken.
 
 ## 🪝 Hooks für eigene Automatisierungen
 
@@ -259,6 +290,11 @@ Handy …).
 
 ## 🩺 Fehlersuche
 
+- **Es kommt keine Ansage?** Der schnellste Weg: *Konfigurieren → den betroffenen Fall
+  wählen → Häkchen bei **„Jetzt testen"** → absenden*. Der Dialog nennt dir dann die
+  Ursache im Klartext – etwa ein nicht erreichbares Zielgerät oder eine fehlende
+  Alexa-Integration. (Bis Version 2.5.0 meldete der Test immer Erfolg, auch wenn nichts
+  zu hören war.)
 - **Diagnose-Knopf** am Hub → Benachrichtigung mit komplettem Zustand.
 - Sensor **„Letzte Prüfung"** muss ~alle 15 s ticken (sonst läuft die Logik nicht →
   Home Assistant neu starten).

@@ -35,6 +35,27 @@ deshalb müssen eigene Dateien konvertiert werden.
 | **Länge** | höchstens **240 Sekunden** | Pro Ansage. |
 | **Erreichbarkeit** | öffentliches **HTTPS** mit gültigem Zertifikat | Amazons Server lädt die Datei selbst. Selbstsignierte Zertifikate werden abgelehnt. |
 
+### Womit konvertieren?
+
+| Werkzeug | Für wen | Bemerkung |
+|---|---|---|
+| **ffmpeg** (empfohlen) | alle, die einen Befehl eintippen können | Trifft **alle** Vorgaben in einem Rutsch, auch die heiklen (keine ID3-Daten, kein Xing-Header). Anleitung direkt unten. |
+| **Audacity** | wer lieber klickt | Kostenloses Programm mit Oberfläche. Funktioniert, erfordert aber drei Einstellungen von Hand – siehe [weiter unten](#alternative-ohne-kommandozeile-audacity). |
+| Online-Konverter | – | **Nicht empfohlen.** Die meisten liefern variable Bitrate oder 44100 Hz und schreiben ID3-Daten hinein; das Ergebnis bleibt dann stumm, ohne dass man den Grund sieht. |
+
+**ffmpeg installieren:**
+
+```bash
+# Windows (PowerShell)
+winget install Gyan.FFmpeg
+
+# macOS
+brew install ffmpeg
+
+# Debian/Ubuntu, auch im HA-Terminal-Add-on
+sudo apt install ffmpeg
+```
+
 ### Konvertieren mit ffmpeg
 
 [ffmpeg](https://ffmpeg.org/) ist kostenlos und für Windows, macOS und Linux
@@ -71,6 +92,24 @@ Erwartet: `sample_rate=24000`, `channels=1`, `bit_rate=48000`, `duration` ≤ 24
 > [!NOTE]
 > Die mitgelieferten `.mp3` in diesem Ordner sind bereits exakt so konvertiert
 > (MPEG 2 · 48 kbps · 24000 Hz · Mono · ohne ID3) und damit sofort Alexa-tauglich.
+
+### Alternative ohne Kommandozeile: Audacity
+
+[Audacity](https://www.audacityteam.org/) ist kostenlos und hat eine normale
+Programmoberfläche. Es sind drei Schritte nötig – die Voreinstellungen des Programms
+erfüllen Amazons Vorgaben **nicht**:
+
+1. Datei öffnen. Unten links **Projektfrequenz** auf **24000** stellen.
+2. Menü **Spuren → Mix → Stereo in Mono umwandeln** (falls die Aufnahme stereo ist).
+3. **Datei → Exportieren → Als MP3 exportieren.** Im Export-Fenster:
+   * **Bitratenmodus: Konstant**
+   * **Qualität: 48 kbps**
+   * **Kanäle: Mono**
+   * Die Felder für **Titel, Künstler, Album** allesamt **leer** lassen (das sind die
+     ID3-Daten, die beim Abruf durch Amazon Ärger machen).
+
+Danach mit dem `ffprobe`-Befehl von oben gegenprüfen – oder einfach im Ansage-Dialog
+auf **„Jetzt testen"** klicken. Bleibt es stumm, stimmt am Format noch etwas nicht.
 
 ---
 
