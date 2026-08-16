@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.5.3
+- **Neu: Sammel-Tab „Kinder" für die Eltern.** Im Dashboard gibt es jetzt einen
+  zusätzlichen Tab, der die Steuerung **aller** Kinder untereinander zeigt – mit
+  demselben **Play**-Knopf, den auch das Kind hat. Damit gibst du Zeit frei, ohne dich
+  als Kind anmelden zu müssen. Der Tab ist **nur für die Eltern-Benutzer** sichtbar;
+  die eigenen Kinder-Tabs bleiben unverändert dem jeweiligen Kind vorbehalten.
+  Abschaltbar unter *Konfigurieren → Sichtbarkeit*.
+  > Damit der Tab erscheint, das Dashboard einmal **neu erzeugen** (Knopf
+  > „Dashboard-Vorlage erstellen" am Hub-Gerät).
+- **Neu: Menüpunkt „Über & unterstützen".** Unter *Konfigurieren* ganz unten: zeigt die
+  installierte Version und führt zur Anleitung, zu medienstop.de und zur
+  Fehlermeldung – und enthält einen dezenten Spendenhinweis. Er erscheint nur, wenn du
+  diesen Punkt selbst aufrufst, und steht sonst nirgends im Weg.
+
 ## 2.5.2
 - **Fix (wichtig): Videos liefen auf vielen Fernsehern nicht.** Die mitgelieferten
   Videos wurden dem Fernseher als `https://`-Adresse übergeben – **viele Fernseher und

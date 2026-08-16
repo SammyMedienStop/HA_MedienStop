@@ -39,11 +39,16 @@ from .const import (
     SRC_TTS,
     SRC_URL,
     SRC_WWW,
+    URL_DOKU,
+    URL_ISSUES,
+    URL_SPENDE,
+    URL_WEBSITE,
     as_int,
     normalize_announce,
     sources_for_target,
     CONF_ADMIN_USERS,
     CONF_KID_DASHBOARD,
+    CONF_PARENT_KID_TAB,
     CONF_NAMES,
     CONF_NUM_CHILDREN,
     CONF_NUM_PROFILES,
@@ -119,6 +124,11 @@ def _visibility_schema(num_children: int, options: list[dict], data: dict) -> vo
         cur = tab_users.get(cid)
         opt = {"suggested_value": cur} if cur else {}
         fields[vol.Optional(key, description=opt)] = _user_selector(options)
+    # Sammel-Tab "Kinder" fuer die Eltern - damit man Zeit freigeben kann, ohne
+    # sich als Kind anzumelden.
+    fields[vol.Optional(
+        CONF_PARENT_KID_TAB,
+        default=bool(data.get(CONF_PARENT_KID_TAB, True)))] = selector.BooleanSelector()
     return vol.Schema(fields)
 
 
@@ -320,6 +330,8 @@ class MedienStopConfigFlow(ConfigFlow, domain=DOMAIN):
                 tab_users, admin = _collect_visibility(user_input, nc)
                 self._data[CONF_TAB_USERS] = tab_users
                 self._data[CONF_ADMIN_USERS] = admin
+                self._data[CONF_PARENT_KID_TAB] = bool(
+                    user_input.get(CONF_PARENT_KID_TAB, True))
             return await self.async_step_dashboard()
         return self.async_show_form(step_id="visibility",
                                     data_schema=_visibility_schema(nc, options, self._data))
@@ -359,7 +371,36 @@ class MedienStopOptionsFlow(OptionsFlow):
         return self.async_show_menu(step_id="init", menu_options=[
             "basis", "names", "visibility",
             "ansage_timeup", "ansage_limit", "ansage_notimer",
+            "info",
         ])
+
+    # --- Ueber & Unterstuetzen ----------------------------------------------
+    async def async_step_info(self, user_input=None) -> ConfigFlowResult:
+        """Version und Projekt-Adressen - bewusst als eigener Menuepunkt.
+
+        So steht der Spendenhinweis nirgends im Weg: Er erscheint nur, wenn man
+        diesen Punkt selbst aufruft.
+        """
+        if user_input is not None:
+            return self.async_create_entry(title="", data=dict(self._entry.options))
+
+        from homeassistant.loader import async_get_integration
+        try:
+            version = str((await async_get_integration(self.hass, DOMAIN)).version)
+        except Exception:  # pragma: no cover - Integration immer vorhanden
+            version = "?"
+
+        return self.async_show_form(
+            step_id="info",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "version": version,
+                "website": URL_WEBSITE,
+                "doku": URL_DOKU,
+                "issues": URL_ISSUES,
+                "spende": URL_SPENDE,
+            },
+        )
 
     def _save(self, changes: dict[str, Any]) -> ConfigFlowResult:
         """Uebernimmt NUR die geaenderten Schluessel (Merge statt Vollersetzung)."""
@@ -419,6 +460,7 @@ class MedienStopOptionsFlow(OptionsFlow):
             return self._save({
                 CONF_TAB_USERS: {**data.get(CONF_TAB_USERS, {}), **tab_users},
                 CONF_ADMIN_USERS: admin,
+                CONF_PARENT_KID_TAB: bool(user_input.get(CONF_PARENT_KID_TAB, True)),
             })
         return self.async_show_form(step_id="visibility",
                                     data_schema=_visibility_schema(nc, options, data))

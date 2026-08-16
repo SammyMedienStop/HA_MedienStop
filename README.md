@@ -161,6 +161,16 @@ von Hand bauen. So geht's, auch für Einsteiger:
 > Wer welchen Tab sieht, steckt bereits in der Vorlage – das hast du im
 > Einrichtungs-Assistenten unter **Sichtbarkeit** festgelegt.
 
+### 👨‍👩‍👧 Der Tab „Kinder" für Eltern
+
+Neben dem Eltern-Tab gibt es einen Tab **„Kinder"**, der die Steuerung **aller** Kinder
+untereinander zeigt – mit demselben **Play**-Knopf, den auch das Kind sieht. Praktisch,
+wenn du zwischendurch Zeit freigeben willst, ohne dich als Kind anzumelden.
+
+Der Tab ist **nur für die Eltern-Benutzer** sichtbar; die einzelnen Kinder-Tabs bleiben
+weiterhin dem jeweiligen Kind vorbehalten. Abschalten kannst du ihn unter
+*Konfigurieren → **Sichtbarkeit*** – danach das Dashboard einmal neu erzeugen.
+
 ## 🎬 Abschalt-Ansagen
 
 Kurz vor dem Ausschalten wird eine Ansage abgespielt. Es gibt drei Fälle, jeweils

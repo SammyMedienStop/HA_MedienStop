@@ -19,6 +19,13 @@ CONF_NAMES = "names"                   # {kind_1: Name, profil_1: Name, ...}
 CONF_TAB_USERS = "tab_users"           # {kind_1: user_id, ...} fuer Tab-Sichtbarkeit
 CONF_ADMIN_USERS = "admin_users"       # [user_id, ...] sehen Eltern-/Einstell-Tabs
 CONF_VIDEOS = "videos"                 # {timeup:{id,type,delay}, limit:{...}, notimer:{...}}
+CONF_PARENT_KID_TAB = "parent_kid_tab"  # Eltern-Tab mit der Steuerung aller Kinder
+
+# --- Projekt-Adressen (Menuepunkt "Ueber & Unterstuetzen") -------------------
+URL_WEBSITE = "https://medienstop.de"
+URL_DOKU = "https://github.com/SammyMedienStop/HA_MedienStop#readme"
+URL_ISSUES = "https://github.com/SammyMedienStop/HA_MedienStop/issues"
+URL_SPENDE = "https://www.paypal.com/donate/?hosted_button_id=JN23TQFMSX5EU"
 
 # --- Grenzen / Standardwerte ------------------------------------------------
 MIN_CHILDREN, MAX_CHILDREN = 1, 9

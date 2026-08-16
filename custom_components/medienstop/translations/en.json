@@ -67,7 +67,8 @@
           "visibility": "Visibility – who sees which tab",
           "ansage_timeup": "Announcement: time/budget used up",
           "ansage_limit": "Announcement: end of time window (bedtime)",
-          "ansage_notimer": "Announcement: no timer / outside allowed time"
+          "ansage_notimer": "Announcement: no timer / outside allowed time",
+          "info": "About & support"
         }
       },
       "basis": {
@@ -114,7 +115,8 @@
           "user_kind_7": "User for child 7",
           "user_kind_8": "User for child 8",
           "user_kind_9": "User for child 9",
-          "admin_users": "Parents (see parent & settings tabs)"
+          "admin_users": "Parents (see parent & settings tabs)",
+          "parent_kid_tab": "Parents get a combined “Children” tab (release time without signing in as a child)"
         }
       },
       "ansage_timeup": {
@@ -156,6 +158,10 @@
           "delay": "Delay before switching off (sec.)",
           "test": "Test now – do not save yet"
         }
+      },
+      "info": {
+        "title": "About MedienStop.de & support",
+        "description": "**MedienStop.de** – version {version}\n\nScreen-time control for children, built alongside [medienstop.de]({website}).\n\n- 📖 [Read the guide]({doku})\n- 🌐 [medienstop.de]({website})\n- 🐞 [Report a bug or ask a question]({issues})\n\n---\n\nThis integration is free and will stay that way. If it helps you, a [small donation]({spende}) is very welcome – it keeps the project going. But it works just as well without. ❤️"
       }
     },
     "error": {

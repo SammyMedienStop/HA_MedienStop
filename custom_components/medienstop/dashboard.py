@@ -37,7 +37,8 @@ _HUB_DEFAULTS = {
 # Zweisprachige Beschriftungen (Tabs, Karten, Knöpfe, Diagramm, Bestätigungen).
 _DASH_L = {
     "de": {
-        "tab_parents": "Eltern", "tab_stats": "Statistik", "tab_hooks": "Hooks",
+        "tab_parents": "Eltern", "tab_kids": "Kinder",
+        "tab_stats": "Statistik", "tab_hooks": "Hooks",
         "system": "System",
         "tv_active": "Fernseher aktiv", "system_active": "System aktiv",
         "holiday": "Ferien heute", "parent_time": "Elternzeit",
@@ -58,7 +59,8 @@ _DASH_L = {
         "url_active": "Aktiv-URL", "url_inactive": "Inaktiv-URL", "parent_mode": "Elternmodus",
     },
     "en": {
-        "tab_parents": "Parents", "tab_stats": "Statistics", "tab_hooks": "Hooks",
+        "tab_parents": "Parents", "tab_kids": "Children",
+        "tab_stats": "Statistics", "tab_hooks": "Hooks",
         "system": "System",
         "tv_active": "TV active", "system_active": "System active",
         "holiday": "Holiday today", "parent_time": "Parent time",
@@ -116,8 +118,15 @@ def build_dashboard(num_children: int, num_profiles: int,
                     ids: dict | None = None,
                     tab_users: dict | None = None,
                     admin_users: list | None = None,
-                    lang: str = "de") -> dict:
-    """Flache Tab-Struktur: Eltern + je Profil + je Kind. lang: "de" oder "en"."""
+                    lang: str = "de",
+                    parent_kid_tab: bool = True) -> dict:
+    """Flache Tab-Struktur: Eltern + je Profil + je Kind. lang: "de" oder "en".
+
+    `parent_kid_tab`: zusaetzlicher Tab "Kinder" mit der Steuerung ALLER Kinder,
+    nur fuer die Eltern-Benutzer sichtbar. Gedacht fuer den Fall, dass Eltern die
+    Zeit freigeben wollen, ohne sich als Kind anzumelden - die Kind-Tabs selbst
+    bleiben dem jeweiligen Kind vorbehalten.
+    """
     num_children = max(1, int(num_children))
     num_profiles = max(1, int(num_profiles))
     child_names = child_names or {}
@@ -191,21 +200,22 @@ def build_dashboard(num_children: int, num_profiles: int,
         return {"title": display, "path": pid, "icon": "mdi:timer-cog-outline",
                 "cards": [{"type": "entities", "title": display, "entities": ents}]}
 
-    # --- Kind-Tab (nur Play/Pause) ------------------------------------------
-    def kid_view(n, display):
+    # --- Kind-Steuerung (Info + Play/Pause) ---------------------------------
+    #   Wird an ZWEI Stellen gebraucht: im eigenen Kind-Tab und - wenn
+    #   gewuenscht - gesammelt im Eltern-Tab "Kinder". Deshalb hier nur einmal
+    #   beschrieben, damit beide Ansichten nicht auseinanderlaufen.
+    def kid_control_cards(n, display, ueberschrift: str = "#"):
         cid = f"kind_{n}"
         st = E(f"{cid}_status")
         rem_t = f"{{{{ states('{E(f'{cid}_remaining')}') }}}}"
         watched_t = f"{{{{ states('{E(f'{cid}_watched')}') }}}}"
         status_t = f"{{{{ states('{st}') }}}}"
-        content = (f"# {display}\n"
+        content = (f"{ueberschrift} {display}\n"
                    f"## {L['minutes_left'] % rem_t}\n"
                    f"{L['watched_today']}: {watched_t} min\n\n"
                    f"{L['status']}: {status_t}")
-        return {
-            "title": display, "path": cid, "icon": "mdi:television-play",
-            "cards": [
-                {"type": "markdown", "content": content},
+        return [
+            {"type": "markdown", "content": content},
                 {"type": "horizontal-stack", "cards": [
                     {"type": "conditional",
                      "conditions": [
@@ -225,8 +235,27 @@ def build_dashboard(num_children: int, num_profiles: int,
                                              "service": "medienstop.pause_timer",
                                              "data": {"child": cid}}}},
                 ]},
-            ],
+        ]
+
+    # --- Kind-Tab (nur Play/Pause) ------------------------------------------
+    def kid_view(n, display):
+        return {
+            "title": display, "path": f"kind_{n}", "icon": "mdi:television-play",
+            "cards": kid_control_cards(n, display),
         }
+
+    # --- Sammel-Tab fuer Eltern: alle Kinder untereinander ------------------
+    #   Zeigt dieselbe Steuerung wie die Kinder sie sehen (inkl. Play), damit
+    #   Eltern die Zeit freigeben koennen, ohne sich als Kind anzumelden. Die
+    #   Ueberschrift ist eine Stufe kleiner, weil hier mehrere Kinder
+    #   untereinander stehen.
+    def kids_overview_view():
+        karten = []
+        for n in range(1, num_children + 1):
+            karten.append({"type": "vertical-stack",
+                           "cards": kid_control_cards(n, cname(n), "##")})
+        return {"title": L["tab_kids"], "path": "kinder",
+                "icon": "mdi:account-child", "cards": karten}
 
     eltern_cards = [system_card()]
     eltern_cards.append({"type": "horizontal-stack", "cards": [
@@ -243,6 +272,8 @@ def build_dashboard(num_children: int, num_profiles: int,
     eltern_cards += [parent_child_card(n, cname(n)) for n in range(1, num_children + 1)]
     views = [{"title": L["tab_parents"], "path": "eltern",
               "icon": "mdi:account-supervisor", "cards": eltern_cards}]
+    if parent_kid_tab:
+        views.append(kids_overview_view())
     for p in range(1, num_profiles + 1):
         views.append(profile_view(p, pname(p)))
     for n in range(1, num_children + 1):
@@ -313,7 +344,7 @@ def build_dashboard(num_children: int, num_profiles: int,
         path = v.get("path") or ""
         if path.startswith("kind_") and tu.get(path):
             v["visible"] = [{"user": tu[path]}]
-        elif admin_vis and (path in ("eltern", "statistik", "video", "hooks")
+        elif admin_vis and (path in ("eltern", "kinder", "statistik", "video", "hooks")
                             or path.startswith("profil_")):
             v["visible"] = admin_vis
 
@@ -326,9 +357,10 @@ def build_dashboard_yaml(num_children: int, num_profiles: int,
                          ids: dict | None = None,
                          tab_users: dict | None = None,
                          admin_users: list | None = None,
-                         lang: str = "de") -> str:
+                         lang: str = "de",
+                         parent_kid_tab: bool = True) -> str:
     return yaml.safe_dump(
         build_dashboard(num_children, num_profiles, child_names, profile_names, ids,
-                        tab_users, admin_users, lang),
+                        tab_users, admin_users, lang, parent_kid_tab),
         allow_unicode=True, sort_keys=False,
     )

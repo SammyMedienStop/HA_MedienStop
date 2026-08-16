@@ -16,7 +16,9 @@
 ## Config-Keys (entry.data)
 `num_children (1-9)`, `num_profiles (1-5)`, `tv_entity`, `video_player`,
 `kid_dashboard`, `names {kind_n/profil_n: Name}`, `tab_users {kind_n: user_id}`,
-`admin_users [user_id]`, `videos {timeup/limit/notimer: {src, delay, …}}`.
+`admin_users [user_id]`, `videos {timeup/limit/notimer: {src, delay, …}}`,
+`parent_kid_tab (bool, Standard true)` – Sammel-Tab „Kinder" im Dashboard, nur für
+`admin_users` sichtbar; wirkt erst beim **nächsten Erzeugen** der Dashboard-Vorlage.
 
 Ein Ansage-Eintrag hat immer `src` (Quelle) und `delay` (Sekunden bis TV-Aus), plus
 je nach Quelle ein Feld: `id`+`type` (bei `media`/`url`/Vorlagen), `file` (bei `www`,

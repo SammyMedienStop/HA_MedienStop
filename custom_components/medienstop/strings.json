@@ -67,7 +67,8 @@
           "visibility": "Sichtbarkeit – wer sieht welchen Tab",
           "ansage_timeup": "Ansage: Zeit/Budget abgelaufen",
           "ansage_limit": "Ansage: Zeitfenster-Ende (Schlafenszeit)",
-          "ansage_notimer": "Ansage: Kein Timer / außerhalb der Zeit"
+          "ansage_notimer": "Ansage: Kein Timer / außerhalb der Zeit",
+          "info": "Über & unterstützen"
         }
       },
       "basis": {
@@ -114,7 +115,8 @@
           "user_kind_7": "Benutzer für Kind 7",
           "user_kind_8": "Benutzer für Kind 8",
           "user_kind_9": "Benutzer für Kind 9",
-          "admin_users": "Eltern (sehen Eltern- & Einstellungs-Tabs)"
+          "admin_users": "Eltern (sehen Eltern- & Einstellungs-Tabs)",
+          "parent_kid_tab": "Eltern sehen einen Sammel-Tab „Kinder“ (Zeit freigeben ohne Kind-Anmeldung)"
         }
       },
       "ansage_timeup": {
@@ -156,6 +158,10 @@
           "delay": "Verzögerung bis zum Ausschalten (Sek.)",
           "test": "Jetzt testen – noch nicht speichern"
         }
+      },
+      "info": {
+        "title": "Über MedienStop.de & unterstützen",
+        "description": "**MedienStop.de** – Version {version}\n\nBildschirmzeit-Steuerung für Kinder, entwickelt als Zusatzprojekt zu [medienstop.de]({website}).\n\n- 📖 [Anleitung lesen]({doku})\n- 🌐 [medienstop.de]({website})\n- 🐞 [Fehler melden oder Frage stellen]({issues})\n\n---\n\nDiese Integration ist kostenlos und bleibt es. Wenn sie dir hilft, freue ich mich über eine [kleine Spende]({spende}) – sie hält das Projekt am Laufen. Ganz ohne geht es aber genauso. ❤️"
       }
     },
     "error": {

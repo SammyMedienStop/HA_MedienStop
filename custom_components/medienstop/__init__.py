@@ -53,6 +53,7 @@ from .const import (
     CONF_NUM_CHILDREN,
     CONF_ADMIN_USERS,
     CONF_NUM_PROFILES,
+    CONF_PARENT_KID_TAB,
     CONF_VIDEOS,
     CONF_TAB_USERS,
     CONF_TV_ENTITY,
@@ -1392,8 +1393,11 @@ def _async_register_services(hass: HomeAssistant) -> None:
         tab_users = mgrs[0].tab_users if mgrs else {}
         admin_users = mgrs[0].admin_users if mgrs else []
         lang = "en" if (hass.config.language or "de")[:2].lower() == "en" else "de"
+        # Sammel-Tab "Kinder" fuer die Eltern (Standard: an) - Einstellung unter
+        # Konfigurieren -> Sichtbarkeit.
+        kid_tab = bool(mgrs[0].entry.data.get(CONF_PARENT_KID_TAB, True)) if mgrs else True
         yaml_str = build_dashboard_yaml(children, profiles, child_names, profile_names, ids,
-                                        tab_users, admin_users, lang)
+                                        tab_users, admin_users, lang, kid_tab)
         if lang == "en":
             title = "MedienStop.de – Dashboard template"
             message = (
