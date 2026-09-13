@@ -13,7 +13,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import CONF_PARENT_KID_TAB, DOMAIN
 from .dashboard import build_dashboard_yaml
 from .entity import (
     MedienStopEntity,
@@ -126,6 +126,9 @@ class GenerateDashboardButton(MedienStopEntity, ButtonEntity):
         yaml_str = build_dashboard_yaml(
             m.num_children, m.num_profiles, child_names, profile_names, ids,
             m.tab_users, m.admin_users, lang,
+            # Sammel-Tab "Kinder" (Konfigurieren -> Sichtbarkeit) auch hier beachten,
+            # nicht nur im Service medienstop.create_dashboard.
+            bool(m.entry.data.get(CONF_PARENT_KID_TAB, True)),
         )
         message = (
             t["dash_instructions"]
