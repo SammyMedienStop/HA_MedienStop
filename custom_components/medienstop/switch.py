@@ -61,10 +61,25 @@ class MSSwitch(MedienStopEntity, SwitchEntity, RestoreEntity):
         return bool(getattr(self.manager, self._key))
 
     async def async_turn_on(self, **kwargs) -> None:
+        await self._check_user()
         self._apply(True)
 
     async def async_turn_off(self, **kwargs) -> None:
+        await self._check_user()
         self._apply(False)
+
+    async def _check_user(self) -> None:
+        """Hub-Schalter sind Elternsache: Kind-Benutzer dürfen sie nicht umlegen.
+
+        HA setzt vor jedem Service-Aufruf den Kontext an der Entity
+        (`async_set_context`), darin steckt der auslösende Benutzer. Ohne
+        diese Prüfung könnte ein Kind z.B. die Elternzeit einschalten und
+        damit unbegrenzt fernsehen.
+        """
+        ctx = getattr(self, "_context", None)
+        await self.manager.async_check_user(
+            getattr(ctx, "user_id", None), None, f"Schalter '{self.name or self._key}'"
+        )
 
     def _apply(self, value: bool) -> None:
         _LOGGER.warning("MedienStop.de: Schalter '%s' -> %s (manuell)", self._key, value)

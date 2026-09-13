@@ -159,7 +159,11 @@ von Hand bauen. So geht's, auch für Einsteiger:
 
 > [!NOTE]
 > Wer welchen Tab sieht, steckt bereits in der Vorlage – das hast du im
-> Einrichtungs-Assistenten unter **Sichtbarkeit** festgelegt.
+> Einrichtungs-Assistenten unter **Sichtbarkeit** festgelegt. Die Zuordnung wirkt
+> außerdem als **Schutz**: Ein Benutzer, der einem Kind zugeordnet ist, kann nur den
+> eigenen Timer starten und pausieren – nicht die Timer der Geschwister, nicht die
+> Elternzeit und keine anderen Eltern-Funktionen. Auch dann nicht, wenn er einen
+> versteckten Tab per Adresse aufruft.
 
 ### 👨‍👩‍👧 Der Tab „Kinder" für Eltern
 

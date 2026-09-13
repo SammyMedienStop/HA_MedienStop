@@ -3,6 +3,33 @@
 Chronologie der wichtigsten Fixes mit **Symptom → Ursache → Lösung**. Ergänzt die
 nutzerseitige `CHANGELOG.md` um das „Warum".
 
+## [unveröffentlicht] Kinder konnten fremde Timer und den Elternmodus bedienen
+- **Symptom:** Elternmodus an → Kinder werden zwar pausiert, aber ein Kind konnte
+  die Elternzeit wieder ausschalten bzw. den Timer eines Geschwisterkinds
+  starten/stoppen. „Kinder dürfen keinen Modus eines anderen stoppen oder starten"
+  wurde nicht eingehalten.
+- **Ursache:** Es gab **keine serverseitige Berechtigungsprüfung**. Die Services
+  (`start_timer`, `pause_timer`, `stop_timer`, `add_time`, …) und die Hub-Switches
+  nahmen jeden Aufruf an. Die Absicherung bestand nur aus der Lovelace-Tab-
+  Sichtbarkeit (`visible: [{user}]`) – die versteckt aber nur den Reiter; der
+  View-Pfad bleibt per URL erreichbar, und Entities sind über die Suche/More-Info
+  für jeden angemeldeten Benutzer schaltbar.
+- **Lösung:** `MedienStopManager.async_check_user(user_id, cid, action)` wertet die
+  bestehende Zuordnung aus *Sichtbarkeit* (`tab_users`, `admin_users`) aus.
+  Kind-Benutzer (in `tab_users` eingetragen) dürfen nur `start/pause/stop` für ihr
+  eigenes `cid`; alles andere wirft `HomeAssistantError` (erscheint als Meldung im
+  Dashboard) und loggt auf WARNING. Frei bleiben: kein Benutzer im Kontext
+  (Automationen), `admin_users`, HA-Admins (`hass.auth.async_get_user().is_admin`)
+  und Benutzer ohne Zuordnung (Bestandsschutz). Der auslösende Benutzer kommt bei
+  Services aus `call.context.user_id`, bei den Switches aus `entity._context`
+  (HA setzt ihn vor jedem Entity-Service-Aufruf per `async_set_context`).
+  Zusätzlich pausiert `_scan()` laufende Kinder, solange `parent_override` an ist –
+  Sicherheitsnetz, damit während der Elternzeit nie Restzeit abläuft oder Statistik
+  zählt, egal auf welchem Weg ein Kind auf `running` kam.
+- **Nicht abgedeckt (bewusst):** Budgets/Zeitfenster/PIN-Text/Profil-Auswahl sind
+  Entities ohne Benutzerprüfung; ein Kind-Benutzer könnte sie über More-Info ändern.
+  Falls das gebraucht wird: dieselbe Prüfung in `number/time/text/select.py` einbauen.
+
 ## [2.5.2] Fernseher spielte die Vorlage nicht — DLNA-Renderer kann kein HTTPS
 - **Symptom:** Test-Knopf gedrückt, Integration meldet Erfolg, Bildschirm bleibt
   schwarz. Am Echo lief dieselbe Ansage einwandfrei.
