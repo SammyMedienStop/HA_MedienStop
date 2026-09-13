@@ -3,7 +3,7 @@
 Chronologie der wichtigsten Fixes mit **Symptom → Ursache → Lösung**. Ergänzt die
 nutzerseitige `CHANGELOG.md` um das „Warum".
 
-## [unveröffentlicht] Kinder konnten fremde Timer und den Elternmodus bedienen
+## [2.5.4] Kinder konnten fremde Timer und den Elternmodus bedienen
 - **Symptom:** Elternmodus an → Kinder werden zwar pausiert, aber ein Kind konnte
   die Elternzeit wieder ausschalten bzw. den Timer eines Geschwisterkinds
   starten/stoppen. „Kinder dürfen keinen Modus eines anderen stoppen oder starten"

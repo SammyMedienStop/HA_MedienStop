@@ -1,6 +1,6 @@
 # Changelog
 
-## Unveröffentlicht
+## 2.5.4
 - **Fix (wichtig): Kinder konnten fremde Timer und den Elternmodus bedienen.** Die
   Tab-Sichtbarkeit im Dashboard versteckt nur die Reiter – ein Kind konnte einen
   fremden Tab per Adresse aufrufen oder den Elternzeit-Schalter über die Suche finden
@@ -21,6 +21,9 @@
   noch auf „läuft" stehen könnte – es wird pausiert, keine Minute abgezogen, nichts
   gezählt. Nach dem Ende der Elternzeit zeigt das Kind „pausiert" und kann mit Play
   weitermachen.
+- **Fix: Knopf „Dashboard-Vorlage erstellen" beachtet die Einstellung „Sammel-Tab
+  Kinder".** Bisher erzeugte der Knopf den Tab immer, auch wenn er unter *Sichtbarkeit*
+  abgeschaltet war (der Service `medienstop.create_dashboard` war schon korrekt).
 
 ## 2.5.3
 - **Neu: Sammel-Tab „Kinder" für die Eltern.** Im Dashboard gibt es jetzt einen
