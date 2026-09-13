@@ -1,6 +1,8 @@
 # Changelog
 
 ## 2.5.4
+> **Dashboard:** muss **nicht** neu erzeugt werden – nach dem Update reicht ein Neustart
+> von Home Assistant.
 - **Fix (wichtig): Kinder konnten fremde Timer und den Elternmodus bedienen.** Die
   Tab-Sichtbarkeit im Dashboard versteckt nur die Reiter – ein Kind konnte einen
   fremden Tab per Adresse aufrufen oder den Elternzeit-Schalter über die Suche finden
