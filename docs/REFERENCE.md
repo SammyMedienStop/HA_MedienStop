@@ -13,6 +13,13 @@
 | `play_media` | media? / url? / content_type? | beliebiges Medium an TV streamen (Test) |
 | `test_video` | which? (timeup/limit/notimer) | konfiguriertes Video sofort abspielen |
 
+**Berechtigung (serverseitig, `MedienStopManager.async_check_user`):** Ist der
+auslösende HA-Benutzer (`call.context.user_id`) unter *Sichtbarkeit* einem Kind
+zugeordnet (`tab_users`), darf er nur `start_timer`/`pause_timer`/`stop_timer` für
+**dieses** Kind; alle anderen Services und die Hub-Switches (Elternzeit, System aktiv,
+Ferien, Essenspause, Auto-Aus) werfen `HomeAssistantError`. Frei: `admin_users`,
+HA-Admins, Automationen (kein Benutzer im Kontext) und Benutzer ohne Zuordnung.
+
 ## Config-Keys (entry.data)
 `num_children (1-9)`, `num_profiles (1-5)`, `tv_entity`, `video_player`,
 `kid_dashboard`, `names {kind_n/profil_n: Name}`, `tab_users {kind_n: user_id}`,

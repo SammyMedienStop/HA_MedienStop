@@ -1,5 +1,27 @@
 # Changelog
 
+## Unveröffentlicht
+- **Fix (wichtig): Kinder konnten fremde Timer und den Elternmodus bedienen.** Die
+  Tab-Sichtbarkeit im Dashboard versteckt nur die Reiter – ein Kind konnte einen
+  fremden Tab per Adresse aufrufen oder den Elternzeit-Schalter über die Suche finden
+  und so den Timer eines Geschwisterkinds stoppen oder sich selbst unbegrenzt Zeit
+  verschaffen. MedienStop.de prüft jetzt **serverseitig**, wer eine Aktion auslöst:
+  * Ein Benutzer, der unter *Sichtbarkeit* einem Kind zugeordnet ist, darf **nur den
+    eigenen Timer** starten und pausieren. Fremde Kinder, die Hub-Schalter (Elternzeit,
+    System aktiv, Ferien, Essenspause, Auto-Aus), Zeit gutschreiben, PIN ändern,
+    Budgets anwenden und Statistik zurücksetzen werden für ihn abgelehnt – mit einer
+    verständlichen Meldung im Dashboard und einem Eintrag im Protokoll.
+  * Eltern-Benutzer, Home-Assistant-Administratoren, Automationen und Benutzer ohne
+    Zuordnung sind wie bisher nicht eingeschränkt.
+  > Voraussetzung: Unter *Konfigurieren → Sichtbarkeit* ist jedem Kind sein
+  > Benutzer zugeordnet. Ohne Zuordnung gibt es keine Sperre.
+- **Fix: Während der Elternzeit läuft garantiert keine Kinderzeit weiter.** Beim
+  Einschalten der Elternzeit werden laufende Kinder pausiert; zusätzlich fängt die
+  Minutenschleife jetzt jeden anderen Weg ab, auf dem ein Kind während der Elternzeit
+  noch auf „läuft" stehen könnte – es wird pausiert, keine Minute abgezogen, nichts
+  gezählt. Nach dem Ende der Elternzeit zeigt das Kind „pausiert" und kann mit Play
+  weitermachen.
+
 ## 2.5.3
 - **Neu: Sammel-Tab „Kinder" für die Eltern.** Im Dashboard gibt es jetzt einen
   zusätzlichen Tab, der die Steuerung **aller** Kinder untereinander zeigt – mit

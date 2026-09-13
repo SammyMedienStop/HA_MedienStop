@@ -278,6 +278,57 @@ class MedienStopManager:
             and self.within_window(cid)
         )
 
+    # ========================================================================
+    # BERECHTIGUNG: Wer darf was bedienen?
+    # ========================================================================
+    def child_ids_for_user(self, user_id: str | None) -> list[str]:
+        """Kinder, denen dieser HA-Benutzer unter "Sichtbarkeit" zugeordnet ist."""
+        if not user_id:
+            return []
+        return [cid for cid, uid in self.tab_users.items() if uid == user_id]
+
+    async def async_check_user(self, user_id: str | None, cid: str | None = None,
+                               action: str = "") -> None:
+        """Sperrt Kind-Benutzer für alles, was nicht ihr eigener Timer ist.
+
+        Hintergrund: Die Tab-Sichtbarkeit im Dashboard ist nur Kosmetik - ein
+        Kind kann einen versteckten Tab per Adresse aufrufen oder eine Entity
+        über die Suche finden und so den Elternmodus einschalten oder den
+        Timer eines Geschwisterkinds stoppen. Deshalb wird hier serverseitig
+        geprüft, wer den Aufruf ausgelöst hat.
+
+        Regeln:
+        * Kein Benutzer im Kontext (Automation, Skript, Zeitplan) -> erlaubt.
+        * HA-Administratoren und die unter "Sichtbarkeit" gewählten Eltern
+          -> erlaubt.
+        * Ein Benutzer, der dort einem Kind zugeordnet ist, darf NUR den Timer
+          dieses Kindes bedienen (`cid`). Elternzeit, andere Kinder, Zeit
+          gutschreiben usw. sind für ihn gesperrt.
+        * Benutzer ohne jede Zuordnung bleiben wie bisher unbeschränkt.
+        """
+        if not user_id or user_id in self.admin_users:
+            return
+        own = self.child_ids_for_user(user_id)
+        if not own:
+            return
+        if cid is not None and cid in own:
+            return
+        try:
+            user = await self.hass.auth.async_get_user(user_id)
+        except Exception:  # pragma: no cover - Auth nicht erreichbar
+            user = None
+        if user is not None and getattr(user, "is_admin", False):
+            return
+        wer = user.name if (user is not None and getattr(user, "name", None)) else user_id
+        was = action or "diese Aktion"
+        if cid is not None and cid in self.children:
+            was = f"{was} für {self.children[cid]['name']}"
+        _LOGGER.warning("MedienStop.de: '%s' durch Kind-Benutzer %s (%s) abgelehnt",
+                        was, wer, own)
+        raise HomeAssistantError(
+            f"Nicht erlaubt: {wer} darf nur den eigenen Timer bedienen ({was} gesperrt)."
+        )
+
     def _notify(self) -> None:
         async_dispatcher_send(self.hass, SIGNAL_UPDATE.format(entry_id=self.entry.entry_id))
 
@@ -1074,6 +1125,12 @@ class MedienStopManager:
         for cid, child in self.children.items():
             if child["state"] != STATE_RUNNING:
                 continue
+            if self.parent_override:
+                # Elternzeit: Kinder werden beim Einschalten pausiert (Schalter).
+                # Sicherheitsnetz für alle anderen Wege, damit während der
+                # Elternzeit NIE Kinderzeit weiterläuft oder Statistik zählt.
+                child["state"] = STATE_PAUSED
+                continue
             if not self.within_window(cid, daytype):
                 reason = reason or "limit"        # Schlafenszeit / Tagesende
                 child["state"] = STATE_PAUSED
@@ -1338,18 +1395,39 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 return mgr
         raise HomeAssistantError(f"Unbekanntes Kind: {child}")
 
+    def _user(call: ServiceCall) -> str | None:
+        """HA-Benutzer, der den Service ausgelöst hat (None bei Automationen)."""
+        ctx = getattr(call, "context", None)
+        return getattr(ctx, "user_id", None) if ctx else None
+
+    async def _check_parent_action(call: ServiceCall, action: str) -> None:
+        """Eltern-Aktion (alle Kinder / Hub): für Kind-Benutzer gesperrt."""
+        for mgr in _managers(hass):
+            await mgr.async_check_user(_user(call), None, action)
+
     async def _start(call: ServiceCall) -> None:
-        _mgr_for(call.data[ATTR_CHILD]).start_timer(call.data[ATTR_CHILD], call.data.get(ATTR_PIN))
+        cid = call.data[ATTR_CHILD]
+        mgr = _mgr_for(cid)
+        await mgr.async_check_user(_user(call), cid, "Starten")
+        mgr.start_timer(cid, call.data.get(ATTR_PIN))
 
     async def _pause(call: ServiceCall) -> None:
-        _mgr_for(call.data[ATTR_CHILD]).pause_timer(call.data[ATTR_CHILD])
+        cid = call.data[ATTR_CHILD]
+        mgr = _mgr_for(cid)
+        await mgr.async_check_user(_user(call), cid, "Pausieren")
+        mgr.pause_timer(cid)
 
     async def _stop(call: ServiceCall) -> None:
-        _mgr_for(call.data[ATTR_CHILD]).stop_timer(call.data[ATTR_CHILD])
+        cid = call.data[ATTR_CHILD]
+        mgr = _mgr_for(cid)
+        await mgr.async_check_user(_user(call), cid, "Stoppen")
+        mgr.stop_timer(cid)
 
     async def _add(call: ServiceCall) -> None:
         child = call.data.get(ATTR_CHILD)
         minutes = call.data[ATTR_MINUTES]
+        # Zeit gutschreiben ist Elternsache - auch für das eigene Kind gesperrt.
+        await _check_parent_action(call, "Zeit gutschreiben")
         if child in (None, "", "all", "alle"):
             # ALLEN Kindern aller Manager Zeit geben
             for mgr in _managers(hass):
@@ -1358,15 +1436,18 @@ def _async_register_services(hass: HomeAssistant) -> None:
             _mgr_for(child).add_time(child, minutes)
 
     async def _setpin(call: ServiceCall) -> None:
+        await _check_parent_action(call, "PIN ändern")
         _mgr_for(call.data[ATTR_CHILD]).set_pin(call.data[ATTR_CHILD], call.data.get(ATTR_PIN, ""))
 
     async def _apply(call: ServiceCall) -> None:
+        await _check_parent_action(call, "Budgets anwenden")
         for mgr in _managers(hass):
             mgr.apply_budgets_now()
 
     async def _reset_stats(call: ServiceCall) -> None:
         child = call.data.get(ATTR_CHILD)
         scope = call.data.get(ATTR_SCOPE, "all")
+        await _check_parent_action(call, "Statistik zurücksetzen")
         if child in (None, "", "all", "alle"):
             for mgr in _managers(hass):
                 mgr.reset_statistics(None, scope)
