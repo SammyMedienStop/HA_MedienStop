@@ -33,6 +33,7 @@ from homeassistant.helpers.event import (
 from homeassistant.util import dt as dt_util
 
 from .dashboard import build_dashboard_yaml
+from .texts import t as _text
 from .const import (
     ANNOUNCE_KEYS,
     BUNDLED_MEDIA,
@@ -320,14 +321,17 @@ class MedienStopManager:
         if user is not None and getattr(user, "is_admin", False):
             return
         wer = user.name if (user is not None and getattr(user, "name", None)) else user_id
-        was = action or "diese Aktion"
+        # `action` ist ein Schlüssel aus texts.py (act_*) oder schon fertiger Text.
+        was = self.t(action) if action.startswith("act_") else (action or self.t("act_default"))
         if cid is not None and cid in self.children:
-            was = f"{was} für {self.children[cid]['name']}"
+            was = self.t("act_for", action=was, name=self.children[cid]["name"])
         _LOGGER.warning("MedienStop.de: '%s' durch Kind-Benutzer %s (%s) abgelehnt",
                         was, wer, own)
-        raise HomeAssistantError(
-            f"Nicht erlaubt: {wer} darf nur den eigenen Timer bedienen ({was} gesperrt)."
-        )
+        raise HomeAssistantError(self.t("err_not_allowed", who=wer, what=was))
+
+    def t(self, key: str, **kw) -> str:
+        """Laufzeittext in der HA-Sprache (siehe texts.py)."""
+        return _text(self.hass, key, **kw)
 
     def _notify(self) -> None:
         async_dispatcher_send(self.hass, SIGNAL_UPDATE.format(entry_id=self.entry.entry_id))
@@ -449,19 +453,19 @@ class MedienStopManager:
     def start_timer(self, cid: str, pin: str | None = None) -> None:
         child = self.children[cid]
         if not self.system_active:
-            raise HomeAssistantError("MedienStop.de-System ist deaktiviert.")
+            raise HomeAssistantError(self.t("err_system_off"))
         if self.meal_pause:
-            raise HomeAssistantError("Essenspause aktiv - bitte warten.")
+            raise HomeAssistantError(self.t("err_meal_pause"))
         if self.parent_override:
-            raise HomeAssistantError("Elternzeit aktiv - Kinder pausiert.")
+            raise HomeAssistantError(self.t("err_parent_time"))
         if self.another_active(cid):
-            raise HomeAssistantError("Ein anderes Kind schaut gerade - bitte warten.")
+            raise HomeAssistantError(self.t("err_other_child"))
         if child["remaining"] <= 0:
-            raise HomeAssistantError(f"{child['name']} hat keine Zeit mehr (Start nicht möglich).")
+            raise HomeAssistantError(self.t("err_no_time", name=child["name"]))
         if not self.within_window(cid):
-            raise HomeAssistantError(f"Außerhalb der erlaubten Zeit für {child['name']}.")
+            raise HomeAssistantError(self.t("err_outside_window", name=child["name"]))
         if child["pin"] and str(pin) != child["pin"]:
-            raise HomeAssistantError("Falscher PIN.")
+            raise HomeAssistantError(self.t("err_wrong_pin"))
         child["state"] = STATE_RUNNING
         self._cancel_off()   # evtl. geplante Abschaltung abbrechen
         self._set_tv(True)
@@ -794,13 +798,11 @@ class MedienStopManager:
             )
         except Exception as err:  # pragma: no cover
             _LOGGER.error("play_media auf %s fehlgeschlagen: %s", target, err)
-            text = (f"Abspielen auf {target} fehlgeschlagen: {err}\n"
-                    "Ist das die richtige (media_player-)Entitaet und das Geraet an?")
+            text = self.t("play_failed", target=target, err=err)
             if notify_on_error:
                 await self.hass.services.async_call("persistent_notification", "create", {
-                    "title": "MedienStop.de – Video",
-                    "message": (f"Abspielen auf **{target}** fehlgeschlagen:\n{err}\n\n"
-                                "Ist das die richtige (media_player-)Entitaet und das Geraet an?"),
+                    "title": self.t("title_video"),
+                    "message": self.t("play_failed_md", target=target, err=err),
                     "notification_id": "medienstop_video_err"}, blocking=False)
             return False, text, url
         return True, "", url
@@ -855,17 +857,11 @@ class MedienStopManager:
         target = self.media_target()
         if not self.hass.services.has_service("notify", "alexa_media"):
             _LOGGER.warning("Ansage auf %s fehlgeschlagen: notify.alexa_media nicht verfuegbar", target)
-            text_err = (f"Ansage auf {target} nicht moeglich: der Service notify.alexa_media "
-                        "existiert nicht. Ist die (HACS-)Integration 'Alexa Media Player' "
-                        "installiert und eingerichtet?")
+            text_err = self.t("speak_no_service", target=target)
             if notify_on_error:
                 await self.hass.services.async_call("persistent_notification", "create", {
-                    "title": "MedienStop.de – Ansage",
-                    "message": (f"Text-Ansage auf **{target}** nicht moeglich: der Service "
-                                "`notify.alexa_media` existiert nicht.\n\n"
-                                "Ist die (HACS-)Integration **Alexa Media Player** installiert und "
-                                "eingerichtet? Ohne sie kann MedienStop.de keine Sprachansage auf "
-                                "einem Alexa/Echo-Geraet abspielen."),
+                    "title": self.t("title_announce"),
+                    "message": self.t("speak_no_service_md", target=target),
                     "notification_id": "medienstop_tts_err"}, blocking=False)
             return False, text_err
         # Reiner Text -> "announce" (mit Aufmerksamkeitston). Ein SSML-<audio>-Tag
@@ -880,15 +876,11 @@ class MedienStopManager:
             )
         except Exception as err:  # pragma: no cover
             _LOGGER.error("Ansage auf %s fehlgeschlagen: %s", target, err)
-            text_err = (f"Ansage auf {target} fehlgeschlagen: {err}\n"
-                        "Ist 'Communications' fuer dieses Geraet in der Alexa-App aktiviert? "
-                        "Das wird fuer Ansagen (announce) benoetigt.")
+            text_err = self.t("speak_failed", target=target, err=err)
             if notify_on_error:
                 await self.hass.services.async_call("persistent_notification", "create", {
-                    "title": "MedienStop.de – Ansage",
-                    "message": (f"Text-Ansage auf **{target}** fehlgeschlagen:\n{err}\n\n"
-                                "Ist 'Communications' fuer dieses Geraet in der Alexa-App aktiviert? "
-                                "Das wird fuer Ansagen (announce) benoetigt."),
+                    "title": self.t("title_announce"),
+                    "message": self.t("speak_failed_md", target=target, err=err),
                     "notification_id": "medienstop_tts_err"}, blocking=False)
             return False, text_err
         return True, ""
@@ -943,27 +935,21 @@ class MedienStopManager:
         target = self.media_target()
 
         if src == SRC_NONE:
-            return "nein", "", None, "Keine Ansage eingestellt - der Fernseher geht sofort aus."
+            return "nein", "", None, self.t("ann_none")
         if not target:
-            return "nein", "", None, ("Es ist kein Ziel eingerichtet. Bitte unter Konfigurieren "
-                                      "einen Fernseher oder Video-Player waehlen.")
+            return "nein", "", None, self.t("ann_no_target")
         if not target.startswith("media_player."):
-            return "nein", "", None, (f"Das Ziel {target} ist kein media_player. Fuer Ansagen bitte "
-                                      "unter Konfigurieren einen Video-Player (media_player) waehlen.")
+            return "nein", "", None, self.t("ann_not_player", target=target)
 
         # Ein abgemeldetes/entferntes Geraet nimmt Befehle stumm entgegen: nichts
         # passiert, kein Fehler. Genau daran scheiterten Ansagen bisher unbemerkt,
         # wenn als Video-Player noch ein altes Geraet eingetragen war.
         zustand = self.hass.states.get(target)
         if zustand is None:
-            return "nein", "", None, (
-                f"Das eingestellte Ziel {target} gibt es nicht (mehr). Bitte unter "
-                "Konfigurieren einen vorhandenen Fernseher oder Video-Player waehlen.")
+            return "nein", "", None, self.t("ann_target_missing", target=target)
         if zustand.state in ("unavailable", "unknown"):
-            return "nein", "", None, (
-                f"Das Ziel {target} ist gerade nicht verfuegbar (Status: {zustand.state}). "
-                "Ist das Geraet eingeschaltet und mit dem Netz verbunden? Solange es so "
-                "ist, kann keine Ansage abgespielt werden.")
+            return "nein", "", None, self.t("ann_target_unavailable", target=target,
+                                            state=zustand.state)
 
         is_alexa = self._target_is_alexa()
 
@@ -979,57 +965,46 @@ class MedienStopManager:
         if src == SRC_TTS:
             text = cfg.get("tts") or ""
             if not text:
-                return "nein", "", None, "Es ist kein Ansage-Text eingetragen."
+                return "nein", "", None, self.t("ann_no_tts_text")
             if not is_alexa:
-                return "nein", "", None, (
-                    f"Eine Text-Ansage kann nur ein Alexa/Echo vorlesen. {target} ist "
-                    "keins - bitte eine Video-/Audio-Vorlage waehlen oder unter "
-                    "Konfigurieren einen Echo als Video-Player eintragen.")
-            return "speak", text, None, f"Text-Ansage an {target}: „{text}“"
+                return "nein", "", None, self.t("ann_tts_needs_alexa", target=target)
+            return "speak", text, None, self.t("ann_tts_ok", target=target, text=text)
 
         # --- Eingebauter Alexa-Klang -----------------------------------------
         if src == SRC_SOUND:
             sound = cfg.get("sound") or ""
             if not sound:
-                return "nein", "", None, "Es ist kein Klang ausgewaehlt."
+                return "nein", "", None, self.t("ann_no_sound")
             if not is_alexa:
-                return "nein", "", None, (f"Eingebaute Alexa-Klaenge gibt es nur auf Echo-Geraeten. "
-                                          f"{target} ist keins - bitte eine andere Quelle waehlen.")
-            return "play", sound, "sound", f"Alexa-Klang „{sound}“ an {target}"
+                return "nein", "", None, self.t("ann_sound_needs_alexa", target=target)
+            return "play", sound, "sound", self.t("ann_sound_ok", sound=sound, target=target)
 
         # --- Dateibasierte Quellen -------------------------------------------
         if src == SRC_WWW:
             filename = cfg.get("file") or ""
             if not filename:
-                return "nein", "", None, "Es ist keine Datei aus dem Ordner www/ ausgewaehlt."
+                return "nein", "", None, self.t("ann_no_file")
             url = self._public_local_url(filename)
             if not url:
-                return "nein", "", None, ("Home Assistant hat keine oeffentliche HTTPS-Adresse. "
-                                          "Eigene Dateien brauchen Nabu Casa oder eine eigene Domain - "
-                                          "sonst bitte eine mitgelieferte Vorlage verwenden.")
+                return "nein", "", None, self.t("ann_no_https")
             ctype = self._media_type(url)
         else:
             url, ctype = announce_media(cfg)
             if not url:
-                return "nein", "", None, "Fuer diese Ansage ist keine Datei hinterlegt."
+                return "nein", "", None, self.t("ann_no_template")
             ctype = ctype or self._media_type(url)
 
         if is_alexa:
             # Alexa kann weder media-source-Dateien noch Videos abspielen.
             if url.startswith("media-source"):
-                return "nein", "", None, ("Alexa kann keine Dateien aus dem Media-Browser abspielen. "
-                                          "Bitte eine mitgelieferte Audio-Vorlage, eine Datei aus www/ "
-                                          "oder eine Text-Ansage waehlen.")
+                return "nein", "", None, self.t("ann_alexa_no_media_source")
             if ctype == "video" or url.lower().split("?")[0].endswith((".mp4", ".mkv", ".avi")):
-                return "nein", "", None, ("Alexa kann keine Videos abspielen. Bitte die passende "
-                                          "Audio-Vorlage (MP3) statt der Video-Vorlage waehlen.")
+                return "nein", "", None, self.t("ann_alexa_no_video")
             if not url.lower().startswith("https://"):
-                return "nein", "", None, (
-                    "Alexa laedt die Audiodatei selbst herunter und braucht dafuer eine "
-                    f"oeffentliche HTTPS-Adresse. Diese hier ist keine:\n{url}")
-            return "speak_ssml", self._ssml_audio(url), None, f"Audio-Ansage an {target} (Alexa):\n{url}"
+                return "nein", "", None, self.t("ann_alexa_needs_https", url=url)
+            return "speak_ssml", self._ssml_audio(url), None, self.t("ann_audio_ok", target=target, url=url)
 
-        return "play", url, ctype, f"Ansage an {target}:\n{url}"
+        return "play", url, ctype, self.t("ann_play_ok", target=target, url=url)
 
     def announce(self, reason: str, cfg: dict | None = None) -> tuple[bool, str]:
         """Startet die Ansage beilaeufig. -> (gestartet, Klartext-Meldung)
@@ -1066,7 +1041,7 @@ class MedienStopManager:
                 # Rueckmeldung stehen, sonst zeigt der Test eine Adresse an, die
                 # gar nicht abgespielt wurde.
                 meldung = (f"{meldung.split(chr(10))[0]}\n{genutzt}\n"
-                           "(Vorlage aus dem Heimnetz - viele Fernseher koennen kein HTTPS.)")
+                           + self.t("ann_local_hint"))
         else:
             ok, fehler = await self._async_speak(payload, ssml=(art == "speak_ssml"),
                                                  notify_on_error=False)
@@ -1168,42 +1143,41 @@ class MedienStopManager:
     # --- Diagnose ------------------------------------------------------------
     def diagnostics_text(self) -> str:
         """Menschlich lesbarer Statusbericht: warum (nicht) abgeschaltet wird."""
+        T = self.t
         lines = []
         if not self.system_active:
-            lines.append("*** NOT-AUS: 'System aktiv' ist AUS ***")
-            lines.append("MedienStop.de schaltet den Fernseher weder ein noch aus,")
-            lines.append("und es wird KEINE Zeit abgezogen und KEINE Statistik gezählt.")
+            lines.append(T("diag_emergency_1"))
+            lines.append(T("diag_emergency_2"))
+            lines.append(T("diag_emergency_3"))
             lines.append("")
-        lines.append(f"System aktiv:    {self.system_active}")
-        lines.append(f"Elternzeit:      {self.parent_override}")
-        lines.append(f"Essenspause:     {self.meal_pause}")
-        lines.append(f"Ferien heute:    {self.holiday}")
-        tv = self.tv_entity_id or "(KEINE TV-Entity gewählt!)"
+        lines.append(T("diag_system", v=self.system_active))
+        lines.append(T("diag_parent", v=self.parent_override))
+        lines.append(T("diag_meal", v=self.meal_pause))
+        lines.append(T("diag_holiday", v=self.holiday))
+        tv = self.tv_entity_id or T("diag_no_tv")
         st = self.hass.states.get(self.tv_entity_id) if self.tv_entity_id else None
-        roh = st.state if st else "(Entity nicht gefunden)"
-        lines.append(f"TV-Entity:       {tv}")
-        lines.append(f"Video-Player:    {self.media_target()}")
-        lines.append(f"TV roher Zustand:{roh}")
-        lines.append(f"TV gilt als an:  {self._tv_is_on()}")
-        lines.append(f"Tagtyp heute:    {self.current_daytype()}")
-        lines.append("Kinder:")
+        roh = st.state if st else T("diag_entity_missing")
+        lines.append(T("diag_tv_entity", v=tv))
+        lines.append(T("diag_video_player", v=self.media_target()))
+        lines.append(T("diag_tv_raw", v=roh))
+        lines.append(T("diag_tv_on", v=self._tv_is_on()))
+        lines.append(T("diag_daytype", v=self.current_daytype()))
+        lines.append(T("diag_children"))
         authorized = self.parent_override
         for cid, c in self.children.items():
             inw = self.within_window(cid)
             auth = c["state"] == STATE_RUNNING and c["remaining"] > 0 and inw
             if auth:
                 authorized = True
-            lines.append(
-                f"  - {c['name']}: status={self.status_text(cid)} "
-                f"rest={c['remaining']}min state={c['state']} im_fenster={inw}"
-            )
-        lines.append(f"=> Jemand berechtigt: {authorized}")
+            lines.append(T("diag_child", name=c["name"], status=self.status_text(cid),
+                           remaining=c["remaining"], state=c["state"], inw=inw))
+        lines.append(T("diag_authorized", v=authorized))
         would_off = self.system_active and (self.meal_pause or (self._tv_is_on() and not authorized))
-        lines.append(f"=> TV müsste AUS sein: {would_off}")
+        lines.append(T("diag_would_off", v=would_off))
         if not self.system_active:
-            lines.append("HINWEIS: 'System aktiv' ist AUS -> MedienStop schaltet nichts!")
+            lines.append(T("diag_hint_system_off"))
         if not self.tv_entity_id:
-            lines.append("HINWEIS: Keine TV-Entity gewählt -> es kann nichts geschaltet werden!")
+            lines.append(T("diag_hint_no_tv"))
         return "\n".join(lines)
 
     # --- Elternzeit Auto-Aus -------------------------------------------------
@@ -1393,7 +1367,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
         for mgr in _managers(hass):
             if child in mgr.children:
                 return mgr
-        raise HomeAssistantError(f"Unbekanntes Kind: {child}")
+        raise HomeAssistantError(_text(hass, "err_unknown_child", child=child))
 
     def _user(call: ServiceCall) -> str | None:
         """HA-Benutzer, der den Service ausgelöst hat (None bei Automationen)."""
@@ -1408,26 +1382,26 @@ def _async_register_services(hass: HomeAssistant) -> None:
     async def _start(call: ServiceCall) -> None:
         cid = call.data[ATTR_CHILD]
         mgr = _mgr_for(cid)
-        await mgr.async_check_user(_user(call), cid, "Starten")
+        await mgr.async_check_user(_user(call), cid, "act_start")
         mgr.start_timer(cid, call.data.get(ATTR_PIN))
 
     async def _pause(call: ServiceCall) -> None:
         cid = call.data[ATTR_CHILD]
         mgr = _mgr_for(cid)
-        await mgr.async_check_user(_user(call), cid, "Pausieren")
+        await mgr.async_check_user(_user(call), cid, "act_pause")
         mgr.pause_timer(cid)
 
     async def _stop(call: ServiceCall) -> None:
         cid = call.data[ATTR_CHILD]
         mgr = _mgr_for(cid)
-        await mgr.async_check_user(_user(call), cid, "Stoppen")
+        await mgr.async_check_user(_user(call), cid, "act_stop")
         mgr.stop_timer(cid)
 
     async def _add(call: ServiceCall) -> None:
         child = call.data.get(ATTR_CHILD)
         minutes = call.data[ATTR_MINUTES]
         # Zeit gutschreiben ist Elternsache - auch für das eigene Kind gesperrt.
-        await _check_parent_action(call, "Zeit gutschreiben")
+        await _check_parent_action(call, "act_add_time")
         if child in (None, "", "all", "alle"):
             # ALLEN Kindern aller Manager Zeit geben
             for mgr in _managers(hass):
@@ -1436,18 +1410,18 @@ def _async_register_services(hass: HomeAssistant) -> None:
             _mgr_for(child).add_time(child, minutes)
 
     async def _setpin(call: ServiceCall) -> None:
-        await _check_parent_action(call, "PIN ändern")
+        await _check_parent_action(call, "act_set_pin")
         _mgr_for(call.data[ATTR_CHILD]).set_pin(call.data[ATTR_CHILD], call.data.get(ATTR_PIN, ""))
 
     async def _apply(call: ServiceCall) -> None:
-        await _check_parent_action(call, "Budgets anwenden")
+        await _check_parent_action(call, "act_apply_budgets")
         for mgr in _managers(hass):
             mgr.apply_budgets_now()
 
     async def _reset_stats(call: ServiceCall) -> None:
         child = call.data.get(ATTR_CHILD)
         scope = call.data.get(ATTR_SCOPE, "all")
-        await _check_parent_action(call, "Statistik zurücksetzen")
+        await _check_parent_action(call, "act_reset_stats")
         if child in (None, "", "all", "alle"):
             for mgr in _managers(hass):
                 mgr.reset_statistics(None, scope)
@@ -1517,7 +1491,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
             url = call.data.get("url")
             ctype = call.data.get("content_type")
         if not url:
-            raise HomeAssistantError("Bitte eine Mediendatei auswaehlen oder eine URL angeben.")
+            raise HomeAssistantError(_text(hass, "err_no_media"))
         for mgr in _managers(hass):
             mgr._play_media(url, ctype)
 

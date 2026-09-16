@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.6.0
+> **Dashboard:** muss **nicht** neu erzeugt werden – nach dem Update reicht ein Neustart
+> von Home Assistant.
+- **Neu: MedienStop.de ist jetzt vollständig auf Deutsch und Englisch verfügbar.** Die
+  Sprache folgt der Home-Assistant-Einstellung des Benutzers. Einrichtung, Entitäten,
+  Dashboard-Vorlage und Benachrichtigungen waren bereits zweisprachig – jetzt sind es
+  auch die letzten fest deutschen Texte:
+  * Hinweise im Dashboard, wenn ein Start nicht möglich ist („keine Zeit mehr“,
+    „Elternzeit aktiv“, „falscher PIN“, „nur der eigene Timer“ usw.).
+  * Rückmeldungen beim Testen einer Ansage (fehlendes Ziel, Alexa-Hinweise, HTTPS).
+  * Fehler-Benachrichtigungen beim Abspielen und der Diagnose-Bericht.
+- **Neu: Englische Anleitung.** `README_EN.md` mit vollständiger Übersetzung; oben in
+  beiden READMEs steht ein Sprachumschalter. Die HACS-Kurzbeschreibung ist zweisprachig.
+- **Technisch:** Alle Laufzeittexte liegen zentral in `texts.py` (Schlüssel je Sprache),
+  Protokoll-Ausgaben bleiben Deutsch. Für Nutzer mit Home Assistant auf Deutsch ändert
+  sich nichts – Wortlaut wie bisher, nur mit echten Umlauten.
+
 ## 2.5.4
 > **Dashboard:** muss **nicht** neu erzeugt werden – nach dem Update reicht ein Neustart
 > von Home Assistant.

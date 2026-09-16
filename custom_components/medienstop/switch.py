@@ -78,7 +78,8 @@ class MSSwitch(MedienStopEntity, SwitchEntity, RestoreEntity):
         """
         ctx = getattr(self, "_context", None)
         await self.manager.async_check_user(
-            getattr(ctx, "user_id", None), None, f"Schalter '{self.name or self._key}'"
+            getattr(ctx, "user_id", None), None,
+            self.manager.t("act_switch", name=self.name or self._key),
         )
 
     def _apply(self, value: bool) -> None:

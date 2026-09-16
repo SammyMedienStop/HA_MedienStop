@@ -224,3 +224,19 @@ tab_users, admin_users)`. `ids` kommt aus `resolve_entity_ids(hass, entry_id)`
 Sichtbarkeit: Kinder-Tab `visible=[kid_user]`, Eltern-Tabs `visible=admin_users`.
 Button „Dashboard-Vorlage erstellen" + Service `create_dashboard` posten das YAML
 als Benachrichtigung.
+
+## Sprache / Zweisprachigkeit (`texts.py`)
+Alles Sichtbare folgt der **Home-Assistant-Sprache** (`hass.config.language`: `en` →
+Englisch, alles andere → Deutsch):
+- Einrichtung, Entity-Namen, Service-Beschreibungen: `strings.json` +
+  `translations/{de,en}.json` (HA-Mechanik, beide Dateien synchron halten).
+- Dashboard-Generator und Hub-Benachrichtigungen: `lang`-Parameter / `_lang(hass)`
+  (`dashboard.py`, `button.py`).
+- **Laufzeittexte**, die HA nicht übersetzen kann — `HomeAssistantError`-Meldungen
+  (Hinweis im Dashboard), Rückmeldungen der Ansage-Weiche, Diagnose-Bericht,
+  Fehler-Benachrichtigungen: zentral in `texts.py` (`TEXTS["de"|"en"]`,
+  `t(hass, key, **fmt)`; Manager-Kurzform `self.t(...)`). Neue Nutzertexte gehören
+  dorthin, nie als Literal in den Code. Fehlende Schlüssel fallen auf Deutsch zurück.
+- Log-Ausgaben (`_LOGGER`) bleiben Deutsch (Entwickler-/Diagnosesicht).
+- README: `README.md` (DE) und `README_EN.md` (EN) mit Sprachzeile oben; `info.md`
+  (HACS) zweisprachig in einer Datei.

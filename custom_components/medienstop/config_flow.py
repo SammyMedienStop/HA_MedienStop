@@ -486,8 +486,8 @@ class MedienStopOptionsFlow(OptionsFlow):
         """Spielt die noch nicht gespeicherten Werte einmal ab."""
         mgr = self._manager()
         if mgr is None:
-            return False, ("Die Integration wird gerade neu geladen. Bitte ein paar "
-                           "Sekunden warten und noch einmal testen.")
+            from .texts import t
+            return False, t(self.hass, "cf_reloading")
         # async_announce (nicht announce): wartet den Dienst-Aufruf ab, sonst
         # meldet der Test immer Erfolg - auch wenn gar nichts zu hoeren war.
         return await mgr.async_announce(key, cfg)
