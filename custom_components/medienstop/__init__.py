@@ -55,6 +55,11 @@ from .const import (
     CONF_ADMIN_USERS,
     CONF_NUM_PROFILES,
     CONF_PARENT_KID_TAB,
+    CONF_SUNDAY_MODE,
+    DEFAULT_SUNDAY_MODE,
+    SUNDAY_SPLIT,
+    SUNDAY_WERKTAG,
+    SUNDAY_WOCHENENDE,
     CONF_VIDEOS,
     CONF_TAB_USERS,
     CONF_TV_ENTITY,
@@ -117,6 +122,8 @@ class MedienStopManager:
         self.video_player_id: str | None = entry.data.get(CONF_VIDEO_PLAYER) or None
         self.tab_users: dict = entry.data.get(CONF_TAB_USERS, {})
         self.admin_users: list = entry.data.get(CONF_ADMIN_USERS, [])
+        # Wie der Sonntag gewertet wird (siehe const.SUNDAY_*).
+        self.sunday_mode: str = entry.data.get(CONF_SUNDAY_MODE, DEFAULT_SUNDAY_MODE)
 
         # --- globale Schalterzustaende --------------------------------------
         self.system_active: bool = True    # Gesamtsystem aktiv? (Loop läuft nur dann)
@@ -205,12 +212,61 @@ class MedienStopManager:
     # ABLEITUNGEN / HELFER
     # ========================================================================
     def current_daytype(self) -> str:
+        """Tagtyp für Budget und Zeitfenster (Grundlage für alles Weitere).
+
+        "Schulnacht"-Logik: Wochenende = Freitag + Samstag (am nächsten Morgen
+        muss niemand früh raus).  weekday(): Mo=0 .. Fr=4, Sa=5, So=6
+
+        Der Sonntag ist der Sonderfall - freier Tag, aber Schule am Montag.
+        Wie er zählt, entscheidet `sunday_mode` (Konfigurieren -> Grundein-
+        stellungen). Bei "split" liefert er den Wochenend-Tagtyp (Budget und
+        Beginn wie Samstag); nur das Fenster-ENDE kommt aus dem Werktag - das
+        erledigt `window_bounds()`.
+        """
         if self.holiday:
             return DAY_FERIEN
-        # "Schulnacht"-Logik: Wochenende = Freitag + Samstag (am nächsten Morgen
-        # muss niemand frueh raus). Sonntag zählt schon als Werktag, weil Montag
-        # wieder Schule/Arbeit ist.  weekday(): Mo=0 .. Fr=4, Sa=5, So=6
-        return DAY_WOCHENENDE if dt_util.now().weekday() in (4, 5) else DAY_WERKTAG
+        weekday = dt_util.now().weekday()
+        if weekday in (4, 5):
+            return DAY_WOCHENENDE
+        if weekday == 6:
+            return DAY_WERKTAG if self.sunday_mode == SUNDAY_WERKTAG else DAY_WOCHENENDE
+        return DAY_WERKTAG
+
+    def _sunday_split_active(self) -> bool:
+        """True, wenn heute Sonntag ist und das Fenster geteilt werden soll."""
+        return (
+            self.sunday_mode == SUNDAY_SPLIT
+            and not self.holiday
+            and dt_util.now().weekday() == 6
+        )
+
+    def window_bounds(self, cid: str, daytype: str | None = None):
+        """Erlaubtes Zeitfenster (Beginn, Ende) für dieses Kind heute.
+
+        Normalfall: genau das Fenster des Tagtyps. Am Sonntag im Modus "split"
+        wird das Ende durch das Werktag-Ende ersetzt (Schulnacht), der Beginn
+        bleibt der vom Wochenende - so ist der Sonntagvormittag frei wie am
+        Samstag und der Abend endet wie vor einem Schultag.
+        """
+        daytype = daytype or self.current_daytype()
+        windows = self._profile_of(cid)["windows"]
+        start, end = windows[daytype]
+        if self._sunday_split_active() and daytype == DAY_WOCHENENDE:
+            w_start, w_end = windows[DAY_WERKTAG]
+            # Werktag "ganztags" (Beginn == Ende) kennt kein Ende, das gekappt
+            # werden könnte -> Wochenend-Ende behalten. Und ein Werktag-Ende vor
+            # dem Wochenend-Beginn ergäbe ein leeres Fenster (nichts wäre je
+            # erlaubt) -> ebenfalls das Wochenend-Ende behalten.
+            if w_start != w_end and w_end > start:
+                end = w_end
+        return start, end
+
+    def daytype_label(self) -> str:
+        """Tagtyp für Diagnose/Anzeige - am geteilten Sonntag mit Hinweis."""
+        daytype = self.current_daytype()
+        if self._sunday_split_active():
+            return self.t("diag_sunday_split", daytype=daytype)
+        return daytype
 
     def _profile_of(self, cid: str) -> dict:
         pid = self.children[cid]["profile"]
@@ -221,10 +277,9 @@ class MedienStopManager:
         return int(self._profile_of(cid)["budgets"].get(daytype, 0))
 
     def within_window(self, cid: str, daytype: str | None = None) -> bool:
-        daytype = daytype or self.current_daytype()
-        start, end = self._profile_of(cid)["windows"][daytype]
+        start, end = self.window_bounds(cid, daytype)
         if start == end:
-            return True
+            return True   # Beginn == Ende heisst "ganztags erlaubt"
         return start <= dt_util.now().time() <= end
 
     def status_text(self, cid: str) -> str:
@@ -341,6 +396,7 @@ class MedienStopManager:
         st = self.hass.states.get(self.tv_entity_id) if self.tv_entity_id else None
         kids = "; ".join(
             f"{c['name']}={c['state']}/{c['remaining']}min/fenster={self.within_window(cid)}"
+            f"({self.window_bounds(cid)[0]:%H:%M}-{self.window_bounds(cid)[1]:%H:%M})"
             for cid, c in self.children.items()
         )
         _LOGGER.warning(
@@ -1161,7 +1217,7 @@ class MedienStopManager:
         lines.append(T("diag_video_player", v=self.media_target()))
         lines.append(T("diag_tv_raw", v=roh))
         lines.append(T("diag_tv_on", v=self._tv_is_on()))
-        lines.append(T("diag_daytype", v=self.current_daytype()))
+        lines.append(T("diag_daytype", v=self.daytype_label()))
         lines.append(T("diag_children"))
         authorized = self.parent_override
         for cid, c in self.children.items():
@@ -1169,8 +1225,10 @@ class MedienStopManager:
             auth = c["state"] == STATE_RUNNING and c["remaining"] > 0 and inw
             if auth:
                 authorized = True
+            w_start, w_end = self.window_bounds(cid)
             lines.append(T("diag_child", name=c["name"], status=self.status_text(cid),
-                           remaining=c["remaining"], state=c["state"], inw=inw))
+                           remaining=c["remaining"], state=c["state"], inw=inw,
+                           window=f"{w_start:%H:%M}-{w_end:%H:%M}"))
         lines.append(T("diag_authorized", v=authorized))
         would_off = self.system_active and (self.meal_pause or (self._tv_is_on() and not authorized))
         lines.append(T("diag_would_off", v=would_off))

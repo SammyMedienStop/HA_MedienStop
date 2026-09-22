@@ -3,6 +3,32 @@
 Chronologie der wichtigsten Fixes mit **Symptom → Ursache → Lösung**. Ergänzt die
 nutzerseitige `CHANGELOG.md` um das „Warum".
 
+## [2.7.0] „Kein Fernsehen" am Sonntagvormittag — Sonntag zählte als Werktag
+- **Symptom:** (Forum-Meldung) Zeitfenster 8–23 Uhr eingestellt, trotzdem meldet die
+  Integration um 11 Uhr „außerhalb der erlaubten Zeit". Mehrfach aufgetreten.
+- **Ursache:** Kein Rechenfehler in `within_window` — die „Schulnacht"-Logik zählte
+  den **Sonntag als Werktag** (`weekday() in (4,5)` → Wochenende, sonst Werktag).
+  Wer das Werktag-Fenster auf „nach der Schule" gestellt hat (z. B. 16–19 Uhr), bekam
+  am Sonntag genau dieses Fenster — der gemeldete Vormittag lag davor. Der Fehler trat
+  deshalb **nur sonntags** auf, was zu „schon mehrfach vorgekommen" passt. Das
+  eingestellte 8–23-Uhr-Fenster war das vom Wochenende und griff nie.
+- **Lösung:** Neuer Config-Key `sunday_mode` (Konfigurieren → Grundeinstellungen).
+  Standard `split`: `current_daytype()` liefert sonntags den **Wochenend**-Tagtyp
+  (Budget + Fenster-Beginn), und die neue Methode `window_bounds()` ersetzt allein das
+  Fenster-**Ende** durch das des Werktags — der Vormittag ist frei, die Schulnacht
+  bleibt. `wochenende` und `werktag` sind wählbar, `werktag` ist exakt das alte
+  Verhalten. `window_bounds()` ist die einzige Stelle mit dieser Sonderregel; alle
+  Prüfungen laufen über `within_window()` und erben sie automatisch.
+- **Zwei Sicherungen gegen unsinnige Fenster:** Ein Werktag-Fenster mit
+  `start == end` („ganztags") kappt nichts, und ein Werktag-Ende **vor** dem
+  Wochenend-Beginn würde ein dauerhaft leeres Fenster ergeben — beides lässt das
+  Wochenend-Ende stehen, statt den Sonntag komplett zu sperren.
+- **Zweite mögliche Ursache derselben Meldung (nicht geändert):** Wird der Fernseher
+  eingeschaltet, ohne dass jemand im Dashboard auf Play drückt, läuft kein Timer und
+  nach 15 s kommt die Ansage „Keine TV-Zeit". Für Eltern klingt das identisch. Das
+  ist gewolltes Verhalten; eine eigene Ansage („Zeit wäre da, aber Play fehlt") wäre
+  ein separater Ansage-Grund.
+
 ## [2.5.4] Kinder konnten fremde Timer und den Elternmodus bedienen
 - **Symptom:** Elternmodus an → Kinder werden zwar pausiert, aber ein Kind konnte
   die Elternzeit wieder ausschalten bzw. den Timer eines Geschwisterkinds

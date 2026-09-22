@@ -73,13 +73,14 @@
       },
       "basis": {
         "title": "MedienStop.de – Basics",
-        "description": "Number of children/profiles, TV and dashboard variant. Clearing a field removes that selection.",
+        "description": "Number of children/profiles, TV, dashboard variant and how Sunday counts. Clearing a field removes that selection.",
         "data": {
           "num_children": "Number of children (1-9)",
           "num_profiles": "Number of time profiles (1-5)",
           "kid_dashboard": "Kids dashboard",
           "tv_entity": "TV entity (optional)",
-          "video_player": "Media player for streaming (Cast/Chromecast or Alexa, optional)"
+          "video_player": "Media player for streaming (Cast/Chromecast or Alexa, optional)",
+          "sunday_mode": "How does Sunday count?"
         }
       },
       "names": {
@@ -204,6 +205,13 @@
         "amzn_sfx_scifi_alarm_01": "Alarm tone",
         "air_horn_03": "Air horn",
         "clock_01": "Clock ticking"
+      }
+    },
+    "sunday_mode": {
+      "options": {
+        "split": "Split: time as weekend, bedtime as weekday (recommended)",
+        "wochenende": "Entirely as weekend",
+        "werktag": "Entirely as weekday"
       }
     }
   },

@@ -106,8 +106,10 @@ _DE: dict[str, str] = {
     "diag_tv_raw": "TV roher Zustand:{v}",
     "diag_tv_on": "TV gilt als an:  {v}",
     "diag_daytype": "Tagtyp heute:    {v}",
+    "diag_sunday_split": "{daytype} (Sonntag geteilt: Beginn Wochenende, Ende Werktag)",
     "diag_children": "Kinder:",
-    "diag_child": "  - {name}: status={status} rest={remaining}min state={state} im_fenster={inw}",
+    "diag_child": ("  - {name}: status={status} rest={remaining}min state={state} "
+                   "fenster={window} im_fenster={inw}"),
     "diag_authorized": "=> Jemand berechtigt: {v}",
     "diag_would_off": "=> TV müsste AUS sein: {v}",
     "diag_hint_system_off": "HINWEIS: „System aktiv“ ist AUS -> MedienStop schaltet nichts!",
@@ -205,8 +207,10 @@ _EN: dict[str, str] = {
     "diag_tv_raw": "TV raw state:    {v}",
     "diag_tv_on": "TV counts as on: {v}",
     "diag_daytype": "Day type today:  {v}",
+    "diag_sunday_split": "{daytype} (Sunday split: start from weekend, end from weekday)",
     "diag_children": "Children:",
-    "diag_child": "  - {name}: status={status} left={remaining}min state={state} in_window={inw}",
+    "diag_child": ("  - {name}: status={status} left={remaining}min state={state} "
+                   "window={window} in_window={inw}"),
     "diag_authorized": "=> Someone authorized: {v}",
     "diag_would_off": "=> TV should be OFF: {v}",
     "diag_hint_system_off": "NOTE: \"System active\" is OFF -> MedienStop switches nothing!",

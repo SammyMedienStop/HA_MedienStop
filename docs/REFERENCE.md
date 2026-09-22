@@ -25,7 +25,9 @@ HA-Admins, Automationen (kein Benutzer im Kontext) und Benutzer ohne Zuordnung.
 `kid_dashboard`, `names {kind_n/profil_n: Name}`, `tab_users {kind_n: user_id}`,
 `admin_users [user_id]`, `videos {timeup/limit/notimer: {src, delay, …}}`,
 `parent_kid_tab (bool, Standard true)` – Sammel-Tab „Kinder" im Dashboard, nur für
-`admin_users` sichtbar; wirkt erst beim **nächsten Erzeugen** der Dashboard-Vorlage.
+`admin_users` sichtbar; wirkt erst beim **nächsten Erzeugen** der Dashboard-Vorlage,
+`sunday_mode (split|wochenende|werktag, Standard split)` – wie der Sonntag zählt
+(Konfigurieren → Grundeinstellungen).
 
 Ein Ansage-Eintrag hat immer `src` (Quelle) und `delay` (Sekunden bis TV-Aus), plus
 je nach Quelle ein Feld: `id`+`type` (bei `media`/`url`/Vorlagen), `file` (bei `www`,
@@ -79,5 +81,8 @@ Kinder-Play-Button erscheint nur, wenn Status NICHT in
 Je Grund eigene URL + eigene Verzögerung (Sekunden bis TV-Aus).
 
 ## Tagtypen & Zeitlogik
-`werktag` = So–Do, `wochenende` = Fr+Sa, `ferien` = Ferien-Schalter (überschreibt).
+`werktag` = Mo–Do, `wochenende` = Fr+Sa, `ferien` = Ferien-Schalter (überschreibt).
+**Sonntag** je nach `sunday_mode`: `split` (Standard) = Budget/Beginn wie Wochenende,
+Fenster-Ende wie Werktag; `wochenende` = ganz wie Wochenende; `werktag` = ganz wie
+Werktag (Verhalten bis 2.6.0).
 Mitternachts-Reset 00:00:05 setzt Restzeit = Budget des dann aktuellen Tagtyps.

@@ -154,9 +154,27 @@ Entity kann also entweder für Video/URL oder für Text-Ansagen konfiguriert wer
 
 ## Tagtyp (`current_daytype`) — „Schulnacht"-Logik
 `holiday` → `ferien`. Sonst: `weekday() in (4,5)` (Fr, Sa) → `wochenende`, sonst
-`werktag`. D. h. **Sonntag zählt als Werktag** (Montag = Schule).
+`werktag`.
 
-## Fenster (`within_window`) & Budget (`child_budget`)
+**Sonntag** ist der Sonderfall (freier Tag, aber Schule am Montag) und wird über
+`sunday_mode` (`entry.data`, Standard `split`) gesteuert:
+
+| Modus | `current_daytype()` | Fenster (`window_bounds`) |
+|---|---|---|
+| `split` (Standard) | `wochenende` | Beginn vom Wochenende, **Ende vom Werktag** |
+| `wochenende` | `wochenende` | ganz das Wochenend-Fenster |
+| `werktag` | `werktag` | ganz das Werktag-Fenster (Verhalten ≤ 2.6.0) |
+
+Das Budget folgt immer `current_daytype()`; nur das Fenster-Ende wird im
+`split`-Modus ersetzt. `_sunday_split_active()` prüft Modus + Sonntag + kein
+`holiday` (Ferien-Schalter schlägt den Sonntag).
+
+## Fenster (`window_bounds` / `within_window`) & Budget (`child_budget`)
+`window_bounds(cid, daytype)` liefert `(start, end)` und ist die **einzige** Stelle,
+die den Sonntags-Split anwendet — zwei Sicherungen gegen unsinnige Fenster: ein
+Werktag-Fenster mit `start == end` („ganztags") kappt nichts, und ein Werktag-Ende
+**vor** dem Wochenend-Beginn würde ein leeres Fenster ergeben und wird ignoriert.
+In beiden Fällen bleibt das Wochenend-Ende stehen.
 `within_window`: `start <= now <= end` (bei start==end = ganztags erlaubt).
 `child_budget`: `_profile_of(cid)["budgets"][daytype]`. `apply_budgets_now`: setzt
 Restzeit aller Kinder = child_budget (Mitternacht + „Budgets anwenden"-Button).

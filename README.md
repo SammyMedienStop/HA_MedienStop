@@ -46,7 +46,10 @@ MedienStop-Idee.
 
 - **Profile** mit Budget (Minuten) und Zeitfenster je Tagtyp **Werktag /
   Wochenende / Ferien**. Kinder werden Profilen zugewiesen.
-- **„Schulnacht"-Logik**: Wochenende = Freitag + Samstag; Sonntag zählt als Werktag.
+- **„Schulnacht"-Logik**: Wochenende = Freitag + Samstag. Der **Sonntag** ist
+  einstellbar (*Konfigurieren → Grundeinstellungen*): standardmäßig **geteilt** –
+  so viel Zeit wie am Wochenende, aber Schluss wie an einem Schultag. Wahlweise
+  ganz wie Wochenende oder ganz wie Werktag.
 - **Nächtlicher Reset (0 Uhr)** auf das Tagesbudget – neustartfest.
 - **Automatische TV-Abschaltung**: prüft alle 15 s, ob geschaut wird, obwohl keine
   Zeit/kein Timer aktiv ist – und schaltet dann aus.

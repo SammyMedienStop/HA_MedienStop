@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.7.0
+> **Dashboard:** muss **nicht** neu erzeugt werden – nach dem Update reicht ein Neustart
+> von Home Assistant.
+- **Fix (wichtig): Am Sonntagvormittag hieß es „außerhalb der erlaubten Zeit", obwohl
+  Zeit da war.** Bisher zählte der Sonntag komplett als **Werktag**. Wer das
+  Werktag-Zeitfenster auf „nach der Schule" gestellt hat (z. B. 16–19 Uhr), bei dem war
+  der ganze Sonntagvormittag gesperrt – obwohl im Wochenend-Profil z. B. 8–23 Uhr stand.
+  Das Wochenend-Fenster griff am Sonntag nie.
+- **Neu: Du entscheidest, wie der Sonntag zählt.** Unter *Konfigurieren →
+  Grundeinstellungen* gibt es jetzt die Auswahl **„Wie zählt der Sonntag?"**:
+  * **Geteilt (neuer Standard):** so viel Zeit wie am Wochenende und der Vormittag ist
+    frei – aber **Schluss wie an einem Schultag**. Gedacht für genau diesen Tag: frei,
+    und trotzdem ist am Montag früh die Schule.
+  * **Ganz wie Wochenende:** Sonntag ist ein Wochenendtag, auch abends.
+  * **Ganz wie Werktag:** das bisherige Verhalten, falls du es so behalten willst.
+  > **Was sich für dich ändert:** Ohne Zutun gilt ab jetzt „Geteilt". Am Sonntag
+  > bekommt dein Kind damit das **Wochenend-Budget** und darf ab der Wochenend-Startzeit
+  > schauen; Schluss ist zur **Werktags-Endzeit**. Möchtest du es genau wie vorher,
+  > stelle „Ganz wie Werktag" ein.
+- **Diagnose zeigt jetzt das wirklich geltende Zeitfenster** je Kind (z. B.
+  `fenster=08:00-19:00`) und weist den geteilten Sonntag aus. Damit lässt sich sofort
+  sehen, warum gerade gesperrt oder erlaubt ist.
+
 ## 2.6.0
 > **Dashboard:** muss **nicht** neu erzeugt werden – nach dem Update reicht ein Neustart
 > von Home Assistant.

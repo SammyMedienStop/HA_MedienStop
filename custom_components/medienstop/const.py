@@ -20,6 +20,7 @@ CONF_TAB_USERS = "tab_users"           # {kind_1: user_id, ...} fuer Tab-Sichtba
 CONF_ADMIN_USERS = "admin_users"       # [user_id, ...] sehen Eltern-/Einstell-Tabs
 CONF_VIDEOS = "videos"                 # {timeup:{id,type,delay}, limit:{...}, notimer:{...}}
 CONF_PARENT_KID_TAB = "parent_kid_tab"  # Eltern-Tab mit der Steuerung aller Kinder
+CONF_SUNDAY_MODE = "sunday_mode"       # wie der Sonntag gewertet wird (siehe unten)
 
 # --- Projekt-Adressen (Menuepunkt "Ueber & Unterstuetzen") -------------------
 URL_WEBSITE = "https://medienstop.de"
@@ -37,6 +38,17 @@ DAY_WERKTAG = "werktag"
 DAY_WOCHENENDE = "wochenende"
 DAY_FERIEN = "ferien"
 DAY_TYPES: list[str] = [DAY_WERKTAG, DAY_WOCHENENDE, DAY_FERIEN]
+
+# --- Wie zaehlt der Sonntag? -------------------------------------------------
+# Der Sonntag ist der einzige Tag, der beides ist: freier Tag UND Vorabend eines
+# Schultags. Bis 2.6.0 galt er komplett als Werktag - das sperrte den
+# Sonntagvormittag, wenn das Werktag-Fenster erst nachmittags beginnt (nach der
+# Schule). Jetzt waehlbar:
+SUNDAY_SPLIT = "split"              # Budget + Beginn wie Wochenende, Ende wie Werktag
+SUNDAY_WOCHENENDE = "wochenende"    # ganz wie Wochenende
+SUNDAY_WERKTAG = "werktag"          # ganz wie Werktag (Verhalten bis 2.6.0)
+SUNDAY_MODES: list[str] = [SUNDAY_SPLIT, SUNDAY_WOCHENENDE, SUNDAY_WERKTAG]
+DEFAULT_SUNDAY_MODE = SUNDAY_SPLIT
 
 # Standard-Budget je Tagtyp (Minuten) - Startwerte für neue Profile.
 DEFAULT_BUDGETS: dict[str, int] = {

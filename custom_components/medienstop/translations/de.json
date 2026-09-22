@@ -73,13 +73,14 @@
       },
       "basis": {
         "title": "MedienStop.de – Grundeinstellungen",
-        "description": "Anzahl Kinder/Profile, Fernseher und Dashboard-Variante. Felder leeren entfernt die jeweilige Auswahl.",
+        "description": "Anzahl Kinder/Profile, Fernseher, Dashboard-Variante und wie der Sonntag gewertet wird. Felder leeren entfernt die jeweilige Auswahl.",
         "data": {
           "num_children": "Anzahl der Kinder (1-9)",
           "num_profiles": "Anzahl der Zeit-Profile (1-5)",
           "kid_dashboard": "Kinder-Dashboard",
           "tv_entity": "Fernseher-Entität (optional)",
-          "video_player": "Video-Player zum Streamen (Cast/Chromecast oder Alexa, optional)"
+          "video_player": "Video-Player zum Streamen (Cast/Chromecast oder Alexa, optional)",
+          "sunday_mode": "Wie zählt der Sonntag?"
         }
       },
       "names": {
@@ -204,6 +205,13 @@
         "amzn_sfx_scifi_alarm_01": "Alarmton",
         "air_horn_03": "Lufthorn",
         "clock_01": "Uhr-Ticken"
+      }
+    },
+    "sunday_mode": {
+      "options": {
+        "split": "Geteilt: Zeit wie Wochenende, Schluss wie Werktag (empfohlen)",
+        "wochenende": "Ganz wie Wochenende",
+        "werktag": "Ganz wie Werktag"
       }
     }
   },

@@ -45,7 +45,9 @@ the bigger MedienStop idea.
 
 - **Profiles** with a budget (minutes) and time window per day type **weekday /
   weekend / holidays**. Children are assigned to profiles.
-- **"School night" logic**: weekend = Friday + Saturday; Sunday counts as a weekday.
+- **"School night" logic**: weekend = Friday + Saturday. **Sunday** is configurable
+  (*Configure → Basics*): **split** by default – as much time as on the weekend, but
+  bedtime as on a school day. Alternatively entirely as weekend or entirely as weekday.
 - **Nightly reset (midnight)** to the daily budget – survives restarts.
 - **Automatic TV shutdown**: checks every 15 s whether the TV is being watched
   although no time/no timer is active – and switches it off if so.

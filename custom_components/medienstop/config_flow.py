@@ -49,6 +49,9 @@ from .const import (
     CONF_ADMIN_USERS,
     CONF_KID_DASHBOARD,
     CONF_PARENT_KID_TAB,
+    CONF_SUNDAY_MODE,
+    DEFAULT_SUNDAY_MODE,
+    SUNDAY_MODES,
     CONF_NAMES,
     CONF_NUM_CHILDREN,
     CONF_NUM_PROFILES,
@@ -130,6 +133,14 @@ def _visibility_schema(num_children: int, options: list[dict], data: dict) -> vo
         CONF_PARENT_KID_TAB,
         default=bool(data.get(CONF_PARENT_KID_TAB, True)))] = selector.BooleanSelector()
     return vol.Schema(fields)
+
+
+def _sunday_selector() -> selector.SelectSelector:
+    """Auswahl, wie der Sonntag gewertet wird (Wochenende / Werktag / geteilt)."""
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(options=list(SUNDAY_MODES),
+                                      translation_key="sunday_mode",
+                                      mode=selector.SelectSelectorMode.DROPDOWN))
 
 
 def _dashboard_selector() -> selector.SelectSelector:
@@ -417,6 +428,7 @@ class MedienStopOptionsFlow(OptionsFlow):
                 CONF_NUM_CHILDREN: int(user_input[CONF_NUM_CHILDREN]),
                 CONF_NUM_PROFILES: int(user_input[CONF_NUM_PROFILES]),
                 CONF_KID_DASHBOARD: user_input[CONF_KID_DASHBOARD],
+                CONF_SUNDAY_MODE: user_input.get(CONF_SUNDAY_MODE, DEFAULT_SUNDAY_MODE),
                 # Leeres Feld = Auswahl entfernen (frueher liess sie sich nicht loeschen).
                 CONF_TV_ENTITY: user_input.get(CONF_TV_ENTITY) or "",
                 CONF_VIDEO_PLAYER: user_input.get(CONF_VIDEO_PLAYER) or "",
@@ -432,6 +444,9 @@ class MedienStopOptionsFlow(OptionsFlow):
                          description={"suggested_value": data.get(CONF_VIDEO_PLAYER)}): _mediaplayer_selector(),
             vol.Required(CONF_KID_DASHBOARD,
                          default=data.get(CONF_KID_DASHBOARD, KID_DASH_VARIANTS[0])): _dashboard_selector(),
+            vol.Required(CONF_SUNDAY_MODE,
+                         default=data.get(CONF_SUNDAY_MODE,
+                                          DEFAULT_SUNDAY_MODE)): _sunday_selector(),
         })
         return self.async_show_form(step_id="basis", data_schema=schema)
 
