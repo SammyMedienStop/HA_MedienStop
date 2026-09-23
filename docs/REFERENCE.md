@@ -70,7 +70,8 @@ Pro Kind (Gerät „Kind X"):
 
 ## Status-Sensor-Werte (STATUS_*, für Dashboard-Bedingungen)
 `leer` (Restzeit 0), `bereit` (Zeit da, nicht gestartet), `läuft`, `pausiert`,
-`gesperrt` (läuft, außerhalb Fenster), `belegt` (anderes Kind/Elternzeit aktiv).
+`gesperrt` (außerhalb des Zeitfensters – in **jedem** Zustand, nicht nur laufend –
+oder Essenspause), `belegt` (anderes Kind/Elternzeit aktiv).
 Kinder-Play-Button erscheint nur, wenn Status NICHT in
 {leer, läuft, belegt, gesperrt}.
 

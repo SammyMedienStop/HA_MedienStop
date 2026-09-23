@@ -3,6 +3,32 @@
 Chronologie der wichtigsten Fixes mit **Symptom → Ursache → Lösung**. Ergänzt die
 nutzerseitige `CHANGELOG.md` um das „Warum".
 
+## [2.7.1] Play-Knopf trotz gesperrter Zeit — Status und Startbefehl waren uneinig
+- **Symptom:** (Screenshot eines Nutzers, Freitag 21.08.2026, 17:33) Kind-Tab zeigt
+  „Noch 30 Minuten", Status **„bereit"** und einen **Play-Knopf**. Drückt das Kind ihn,
+  kommt „Die Aktion medienstop/start_timer konnte nicht ausgeführt werden. Außerhalb
+  der erlaubten Zeit für Lina."
+- **Ursache:** `status_text()` prüfte `within_window()` **nur im RUNNING-Zweig**. Ein
+  ruhendes oder pausiertes Kind außerhalb des Fensters meldete deshalb `bereit` bzw.
+  `pausiert`. Das Dashboard blendet den Play-Knopf nur bei
+  `{leer, läuft, belegt, gesperrt}` aus — `bereit` rutschte durch. `start_timer()`
+  prüfte das Fenster dagegen korrekt und lehnte ab. Zwei Stellen, zwei Meinungen: die
+  Oberfläche bot eine Aktion an, die nie funktionieren konnte.
+- **Lösung:** Die Fenster-Prüfung wandert in `status_text()` **vor** die
+  Zustands-Abfragen: außerhalb des Fensters ist der Status immer `gesperrt`. Der
+  RUNNING-Zweig braucht die Prüfung damit nicht mehr. Reihenfolge bleibt
+  `Essenspause → leer → gesperrt → läuft → belegt → pausiert → bereit`; `leer` steht
+  bewusst vor `gesperrt` (ohne Restzeit ist das Fenster irrelevant).
+- **Kein neues Dashboard nötig:** Bereits erzeugte Vorlagen schließen `gesperrt` schon
+  aus, der Knopf verschwindet also von selbst.
+- **Zusätzlich:** Die Ablehnung nennt jetzt das **geltende Fenster**
+  („… (erlaubt 08:00-16:00 Uhr)"). Ohne das war aus der Meldung nicht zu erkennen,
+  welches Fenster überhaupt greift — Profil, Tagtyp oder geteilter Sonntag.
+- **Nicht die Ursache:** Der 21.08.2026 war ein **Freitag** (zählt bereits als
+  Wochenende) und 17:33 ist kein Vormittag — der Sonntags-Fix aus 2.7.0 hätte diesen
+  Fall nicht berührt. Warum Linas Fenster damals endete, sagt der Screenshot nicht;
+  genau dafür steht das Fenster jetzt in der Meldung.
+
 ## [2.7.0] „Kein Fernsehen" am Sonntagvormittag — Sonntag zählte als Werktag
 - **Symptom:** (Forum-Meldung) Zeitfenster 8–23 Uhr eingestellt, trotzdem meldet die
   Integration um 11 Uhr „außerhalb der erlaubten Zeit". Mehrfach aufgetreten.

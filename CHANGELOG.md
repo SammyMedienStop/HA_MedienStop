@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.7.1
+> **Dashboard:** muss **nicht** neu erzeugt werden – nach dem Update reicht ein Neustart
+> von Home Assistant.
+- **Fix (wichtig): Der Play-Knopf erschien, obwohl gar nicht gestartet werden konnte.**
+  Stand ein Kind außerhalb seiner erlaubten Zeit, zeigte das Dashboard trotzdem
+  **„bereit"** und einen **Play-Knopf**. Beim Drücken kam dann „Außerhalb der erlaubten
+  Zeit". Grund: Der Status prüfte das Zeitfenster nur, **während** ein Timer lief – bei
+  einem ruhenden oder pausierten Kind wurde es übersehen. Jetzt steht außerhalb des
+  Fensters immer **„gesperrt"**, und der Play-Knopf verschwindet von selbst.
+- **Neu: Die Meldung sagt jetzt, welche Zeit gilt.** Statt „Außerhalb der erlaubten Zeit
+  für Lina." heißt es „… für Lina (erlaubt 08:00-16:00 Uhr)." Damit ist sofort zu sehen,
+  welches Zeitfenster gerade greift – hilfreich, wenn ein Kind einem anderen Profil
+  zugeordnet ist oder der Ferien-Schalter an ist.
+
 ## 2.7.0
 > **Dashboard:** muss **nicht** neu erzeugt werden – nach dem Update reicht ein Neustart
 > von Home Assistant.

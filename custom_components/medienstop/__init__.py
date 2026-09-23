@@ -292,8 +292,16 @@ class MedienStopManager:
             return STATUS_BLOCKED  # während Essenspause alles gesperrt
         if child["remaining"] <= 0:
             return STATUS_IDLE
+        # Ausserhalb des erlaubten Fensters ist "gesperrt" - und zwar in JEDEM
+        # Zustand, nicht nur wenn der Timer gerade laeuft. Vorher pruefte nur der
+        # RUNNING-Zweig das Fenster; ein ruhendes Kind meldete deshalb "bereit",
+        # das Dashboard zeigte den Play-Knopf, und der Start scheiterte dann mit
+        # "Ausserhalb der erlaubten Zeit". Knopf und Startbefehl waren sich also
+        # uneinig (Screenshot eines Nutzers, 21.08.2026).
+        if not self.within_window(cid):
+            return STATUS_BLOCKED
         if child["state"] == STATE_RUNNING:
-            return STATUS_RUNNING if self.within_window(cid) else STATUS_BLOCKED
+            return STATUS_RUNNING
         # TV ist von einem ANDEREN Kind oder von der Elternzeit belegt -> dieses
         # Kind kann jetzt NICHT schauen (auch nicht fortsetzen), daher "belegt".
         # Dadurch blendet das Kind-Dashboard den Play-/Fortsetzen-Knopf aus, solange
@@ -519,7 +527,12 @@ class MedienStopManager:
         if child["remaining"] <= 0:
             raise HomeAssistantError(self.t("err_no_time", name=child["name"]))
         if not self.within_window(cid):
-            raise HomeAssistantError(self.t("err_outside_window", name=child["name"]))
+            # Das geltende Fenster mitnennen: sonst weiss niemand, WELCHES Fenster
+            # gerade greift (Profil, Tagtyp, geteilter Sonntag).
+            start, end = self.window_bounds(cid)
+            raise HomeAssistantError(self.t(
+                "err_outside_window", name=child["name"],
+                window=f"{start:%H:%M}-{end:%H:%M}"))
         if child["pin"] and str(pin) != child["pin"]:
             raise HomeAssistantError(self.t("err_wrong_pin"))
         child["state"] = STATE_RUNNING
